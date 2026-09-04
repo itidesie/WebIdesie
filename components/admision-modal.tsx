@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { trackMetaPixelEvent } from "@/components/landing/meta-pixel"
 import {
   BookOpen,
   Calendar,
@@ -165,6 +166,11 @@ export function AdmisionModal({ programaPreseleccionado, origen, children }: Adm
       }
 
       setStatus("success")
+      // Este modal se usa en varias páginas (MBIM/MBBE/EMBIM/Online/landing),
+      // pero el Meta Pixel solo carga en /landing — trackMetaPixelEvent()
+      // no hace nada si window.fbq no existe, así que esta llamada es segura
+      // en el resto de páginas (ver components/landing/meta-pixel.tsx).
+      trackMetaPixelEvent("Lead")
     } catch (error) {
       setStatus("idle")
       setSubmitError(error instanceof Error ? error.message : "Ha ocurrido un error. Inténtalo de nuevo.")

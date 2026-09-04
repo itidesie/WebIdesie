@@ -12,6 +12,7 @@ import { ReinforcementSection } from "@/components/landing/reinforcement-section
 import { MastersCtaStrip } from "@/components/landing/masters-cta-strip"
 import { StickyCtaBar } from "@/components/landing/sticky-cta-bar"
 import { InfoRequestModal } from "@/components/landing/info-request-modal"
+import { MetaPixel } from "@/components/landing/meta-pixel"
 
 import { hero, strengths, testimonials, masters, faqs, closing } from "./landing-content"
 
@@ -60,6 +61,7 @@ export default function LandingClient() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <MetaPixel />
       {/* Sin Header compartido a propósito: cero navegación, solo marca.
           El logo no lleva Link — no debe sacar al visitante de la página. */}
       <div className="flex justify-center border-b border-border/60 bg-background py-4">
