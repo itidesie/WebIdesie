@@ -1,0 +1,35 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /_next/
+Disallow: /scripts/
+
+# /landing es solo para tráfico de campañas de pago (Google Ads, Meta Ads) —
+# no debe rastrearse ni indexarse. Ver también el noindex en su metadata y
+# CLAUDE.md § "SEO técnico".
+Disallow: /landing
+
+# Allow important pages for SEO
+Allow: /blog/
+Allow: /mbim-page
+Allow: /mbim-online-page
+Allow: /embim-page
+Allow: /mbbe-page
+Allow: /short-courses-page
+Allow: /bim-consulting-page
+Allow: /in-company-page
+Allow: /profesores-page
+Allow: /alumni-page
+Allow: /sobre-idesie-page
+Allow: /contact-page
+Allow: /tienda
+
+# Sitemap location
+Sitemap: https://idesie.com/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

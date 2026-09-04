@@ -1,0 +1,3362 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: #ffffff;
+  --foreground: #374151;
+  --card: #f0f4ff;
+  --card-foreground: #374151;
+  --popover: #ffffff;
+  --popover-foreground: #374151;
+  --primary: #006cff;
+  --primary-foreground: #ffffff;
+  --secondary: #ffba08;
+  --secondary-foreground: #374151;
+  --muted: #f0f4ff;
+  --muted-foreground: #374151;
+  --accent: #ffba08;
+  --accent-foreground: #374151;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #d1d5db;
+  --input: #f0f4ff;
+  --ring: rgba(0, 103, 255, 0.5);
+  --chart-1: #006cff;
+  --chart-2: #ffba08;
+  --chart-3: #374151;
+  --chart-4: #d1d5db;
+  --chart-5: #f0f4ff;
+  --radius: 0.5rem;
+  --sidebar: #f0f4ff;
+  --sidebar-foreground: #374151;
+  --sidebar-primary: #006cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffba08;
+  --sidebar-accent-foreground: #374151;
+  --sidebar-border: #d1d5db;
+  --sidebar-ring: rgba(0, 103, 255, 0.5);
+  --admin-bg: #ffffff;
+  --admin-surface: #f0f4ff;
+  --admin-border: #d1d5db;
+  --admin-text: #374151;
+  --admin-text-muted: #a1a1a1;
+  --admin-accent: #006cff;
+  --admin-accent-hover: #005bbd;
+  --admin-danger: #dc2626;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
+
+  /* Borde inferior del header fijo. Constante en CSS a propósito: antes se
+     medía con JS tras el montaje y el valor de reserva (140px) no coincidía
+     con el real, así que el hero saltaba al hidratar (CLS 0,072).
+
+     Con el header flotante, el borde ya no es el de las barras sino el de la
+     pastilla de cristal que las envuelve (margen superior incluido).
+
+     ⚠️ MEDIDO EN CHROME (scripts/measure-header.mjs), no estimado:
+       · móvil  → margen 12px + fila única de 56px → borde a 70px.
+       · md+    → margen 16px + 52px + 57px de las dos filas → borde a 127px.
+
+     Bajó de 101/146px al rediseñar: el logo declaraba 150×30 cuando el PNG es
+     464×315, y el `height:auto` del preflight lo estiraba a 102px de alto.
+     Antes de eso, el valor de escritorio estuvo en 116px por un cálculo hecho
+     a mano que quedó desfasado. Van dos. **Si tocas el alto de las barras o el
+     margen del shell, vuelve a ejecutar `node scripts/measure-header.mjs` en
+     vez de recalcularlo.** */
+  --header-height: 70px;
+
+  /* — Header flotante de cristal ————————————————————————————————————————
+     Tratamiento "glassmorphism" de la barra de navegacion. Los valores estan
+     aqui, y no en el componente, para poder calibrarlos en un solo sitio.
+
+     ⚠️ La opacidad NO es libre. El header flota sobre el contenido, asi que
+     al hacer scroll pasan por detras las secciones oscuras (gray-950 del M3
+     y el M6, los heroes con velo negro). Con el texto del menu en #374151:
+
+         tinte 0.55 → 3.08:1   ✗ por debajo de AA
+         tinte 0.65 → 4.22:1   ✗ por debajo de AA
+         tinte 0.72 → 5.17:1   ✓ estado en reposo
+         tinte 0.85 → 7.28:1   ✓ estado con scroll
+
+     Un cristal "de catalogo" al 10-20 % deja el menu ilegible sobre esos
+     fondos. Si subes la transparencia, recalcula el contraste antes
+     (scripts/contrast-nav.mjs) y no bajes de 0.70 en claro. */
+  --nav-glass-radius: 1.25rem;
+  --nav-glass-blur: 18px;
+  --nav-glass-saturate: 180%;
+  --nav-glass-bg: rgb(255 255 255 / 0.72);
+  --nav-glass-bg-scrolled: rgb(255 255 255 / 0.85);
+  --nav-glass-border: rgb(255 255 255 / 0.65);
+  --nav-glass-border-scrolled: rgb(15 23 42 / 0.10);
+  --nav-glass-hairline: rgb(15 23 42 / 0.08);
+  --nav-glass-shadow: 0 4px 20px -8px rgb(15 23 42 / 0.22);
+  --nav-glass-shadow-scrolled: 0 14px 34px -12px rgb(15 23 42 / 0.32);
+  /* Paneles desplegables y cajon movil: mismo idioma, mas opacos porque
+     llevan texto denso encima. */
+  --nav-glass-panel: rgb(255 255 255 / 0.92);
+  /* NO hay color de texto para el hover del menu, y es deliberado: sobre el
+     cristal en reposo ni el azul de marca (2.3:1) ni el fuerte (3.4:1) llegan
+     a AA. El hover se expresa con un lavado `bg-brand/10`, que sube el fondo
+     sin tocar el texto y deja 4.7:1. Ver scripts/contrast-nav.mjs. */
+}
+
+@media (min-width: 768px) {
+  :root {
+    --header-height: 127px;
+  }
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+  --admin-bg: #0a0a0a;
+  --admin-surface: #111111;
+  --admin-border: #1f1f1f;
+  --admin-text: #ededed;
+  --admin-text-muted: #a1a1a1;
+  --admin-accent: #10b981;
+  --admin-accent-hover: #059669;
+
+  /* Cristal en modo oscuro: tinte casi negro sobre fondos que pueden ser
+     claros (bg-paper, secciones blancas). Con texto #fafafa encima:
+     0.62 → 5.17:1 en reposo · 0.80 → 9.4:1 con scroll. */
+  --nav-glass-bg: rgb(11 15 25 / 0.62);
+  --nav-glass-bg-scrolled: rgb(11 15 25 / 0.80);
+  --nav-glass-border: rgb(255 255 255 / 0.14);
+  --nav-glass-border-scrolled: rgb(255 255 255 / 0.20);
+  --nav-glass-hairline: rgb(255 255 255 / 0.10);
+  --nav-glass-shadow: 0 4px 20px -8px rgb(0 0 0 / 0.55);
+  --nav-glass-shadow-scrolled: 0 14px 34px -12px rgb(0 0 0 / 0.70);
+  --nav-glass-panel: rgb(11 15 25 / 0.94);
+  --admin-danger: #ef4444;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  /* Azul corporativo IDESIE. Es un token de marca fijo, no un color de tema:
+     no cambia con el modo oscuro (a diferencia de --primary). */
+  --color-brand: #006cff;
+  --color-brand-strong: #0052cc;
+  /* Neutro cálido "papel". Token de marca fijo, igual que el azul: no cambia
+     con el modo oscuro. Su función es dar respiro entre bloques oscuros —
+     nació en el M4 del recorrido de programa, pero es reutilizable en
+     cualquier sección que necesite alivio tonal. Úsalo con `bg-paper`, no
+     copies el hex. Su par oscuro es `gray-950`, el mismo que M3 y M6: no
+     introduzcas un segundo negro. */
+  --color-paper: #f2ede4;
+  --color-paper-strong: #e5dccd;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    overflow-x: hidden;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+    min-height: 100vh;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Mobile responsive text */
+  @media (max-width: 640px) {
+    h1 {
+      word-break: break-word;
+    }
+    p, span, a {
+      word-break: break-word;
+    }
+  }
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 20s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+
+header.fixed,
+div.fixed {
+  will-change: transform;
+}
+
+.flex-grow {
+  min-height: 100vh;
+}
+
+.tiptap {
+  outline: none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+}
+
+.blog-content {
+  line-height: 1.8;
+}
+
+.blog-content h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #1a202c;
+  line-height: 1.2;
+}
+
+.blog-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 1.75rem;
+  margin-bottom: 0.875rem;
+  color: #2d3748;
+  line-height: 1.3;
+}
+
+.blog-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+.blog-content p {
+  margin-bottom: 1.25rem;
+  color: #4a5568;
+}
+
+.blog-content strong {
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.blog-content em {
+  font-style: italic;
+}
+
+.blog-content u {
+  text-decoration: underline;
+}
+
+.blog-content s {
+  text-decoration: line-through;
+}
+
+.blog-content code {
+  background-color: #f7fafc;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.875rem;
+  color: #e53e3e;
+}
+
+.blog-content ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.blog-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.blog-content li {
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+}
+
+.blog-content blockquote {
+  border-left: 4px solid #006cff;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: #718096;
+  background-color: #f7fafc;
+  padding: 1rem;
+  border-radius: 0.25rem;
+}
+
+.blog-content a {
+  color: #006cff;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.blog-content a:hover {
+  color: #005bbd;
+}
+
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1.5rem auto;
+  display: block;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.blog-content [style*="text-align: center"] {
+  text-align: center;
+}
+
+.blog-content [style*="text-align: right"] {
+  text-align: right;
+}
+
+.blog-content [style*="text-align: justify"] {
+  text-align: justify;
+}
+
+.blog-content [style*="text-align: left"] {
+  text-align: left;
+}
+
+.admin-dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card: #111111;
+  --card-foreground: #ededed;
+  --popover: #111111;
+  --popover-foreground: #ededed;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1f1f1f;
+  --secondary-foreground: #ededed;
+  --muted: #1f1f1f;
+  --muted-foreground: #a1a1a1;
+  --accent: #22c55e;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #262626;
+  --input: #1f1f1f;
+  --ring: #3b82f6;
+  --radius: 0.5rem;
+}
+
+.admin-layout {
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #ededed;
+}
+
+.admin-card {
+  background: #111111;
+  border: 1px solid #262626;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.admin-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.admin-dark .tiptap {
+  background: #0a0a0a;
+  color: #ededed;
+  min-height: 400px;
+  padding: 1rem;
+  border: 1px solid #262626;
+  border-radius: 0.5rem;
+}
+
+.admin-dark .tiptap:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.admin-dark .tiptap p.is-editor-empty:first-child::before {
+  color: #525252;
+}
+
+.admin-dark .tiptap h1 {
+  color: #ededed;
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 1.5rem 0 1rem;
+}
+
+.admin-dark .tiptap h2 {
+  color: #ededed;
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.admin-dark .tiptap h3 {
+  color: #ededed;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+}
+
+.admin-dark .tiptap p {
+  color: #a1a1a1;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.admin-dark .tiptap strong {
+  color: #ededed;
+  font-weight: 600;
+}
+
+.admin-dark .tiptap code {
+  background: #1f1f1f;
+  color: #22c55e;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+}
+
+.admin-dark .tiptap blockquote {
+  border-left: 3px solid #3b82f6;
+  padding-left: 1rem;
+  color: #a1a1a1;
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+.admin-dark .tiptap ul,
+.admin-dark .tiptap ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+  color: #a1a1a1;
+}
+
+.admin-dark .tiptap a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.admin-dark .tiptap img {
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  border: 1px solid #262626;
+}
+
+.admin-toolbar {
+  background: #111111;
+  border-bottom: 1px solid #262626;
+  padding: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.admin-toolbar-button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #a1a1a1;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.admin-toolbar-button:hover {
+  background: #1f1f1f;
+  color: #ededed;
+}
+
+.admin-toolbar-button.active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+.admin-input {
+  background: #1f1f1f;
+  border: 1px solid #262626;
+  color: #ededed;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.5rem;
+  transition: all 0.15s;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.admin-input::placeholder {
+  color: #525252;
+}
+
+.admin-button-primary {
+  background: #3b82f6;
+  color: #ffffff;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.15s;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-button-primary:hover {
+  background: #2563eb;
+}
+
+.admin-button-secondary {
+  background: #1f1f1f;
+  color: #ededed;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.15s;
+  border: 1px solid #262626;
+  cursor: pointer;
+}
+
+.admin-button-secondary:hover {
+  background: #262626;
+  border-color: #3b82f6;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===========================================================================
+   SISTEMA GLOBAL DE MOVIMIENTO — CURSOR + BOTÓN, TODO EL SITIO
+   (components/site-motion/, app/layout.tsx)
+
+   Capa nueva e independiente de las dos que ya existían: no sustituye ni
+   toca "Dinamismo de la home" (animation-timeline, justo debajo) ni
+   "RECORRIDO DE PROGRAMA" (GSAP + ScrollTrigger, más abajo). Ninguna de las
+   dos anima el punto del cursor ni ningún botón que use `.btn-sweep` — son
+   elementos propios de esta capa, así que no hay ningún transform en común
+   por el que puedan pelearse.
+
+   El scroll suave (Lenis) no tiene contraparte CSS aquí: se monta desde
+   `SiteMotionProvider` vía `lenis/react`, headless, sin wrapper — sigue
+   actualizando el scrollTop real del documento, así que no interfiere con
+   `animation-timeline: view()` (que lee esa misma posición nativa).
+   =========================================================================== */
+
+/* --- Cursor -----------------------------------------------------------
+   Centrado con márgenes negativos, no con translate: GSAP escribe en
+   transform y las dos cosas se pisarían. Antes vivía como `.journey-cursor`
+   dentro del vocabulario de programa; ahora es de todo el sitio. */
+.site-cursor {
+  margin-left: -4px;
+  margin-top: -4px;
+  will-change: transform;
+}
+
+/* --- Botón: relleno por barrido, versión genérica ------------------------
+   Mecánica idéntica a `.btn-journey`/`.btn-online`/`.btn-blueprint`/
+   `.btn-balance`/`.btn-tablon` (cada página de programa/tienda/financiación/
+   empleo tiene la suya, ya aprobada — no se tocan). Esta es la versión sin
+   vocabulario propio: úsala en cualquier CTA nuevo que no pertenezca a
+   ninguna de esas identidades (home, páginas informativas sin rediseño
+   propio...). Requiere la variable `--btn-fill` en línea, p. ej.
+   `style={{ ["--btn-fill" as string]: "var(--color-brand-strong)" }}`. */
+.btn-sweep {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color var(--dur-out, 0.3s) var(--ease-out-quart, ease),
+    transform var(--dur-out, 0.3s) var(--ease-out-quart, ease);
+}
+
+.btn-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--btn-fill, currentColor);
+  transform: translateY(101%);
+  transition: transform 0.55s var(--ease-out-expo, ease);
+}
+
+.btn-sweep:hover::after,
+.btn-sweep:focus-visible::after {
+  transform: translateY(0);
+}
+
+.btn-sweep:active {
+  transform: scale(0.975);
+  transition-duration: 0.08s;
+}
+
+.btn-sweep .btn-arrow {
+  transition: transform 0.45s var(--ease-out-expo, ease);
+}
+
+.btn-sweep:hover .btn-arrow,
+.btn-sweep:focus-visible .btn-arrow {
+  transform: translateX(0.3rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-cursor {
+    display: none !important;
+  }
+
+  .btn-sweep,
+  .btn-sweep::after,
+  .btn-sweep .btn-arrow {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* ===========================================================================
+   Dinamismo de la home
+   Todo se apoya en opacity y transform (compositor): no provoca reflow ni CLS.
+   El estado oculto inicial se aplica solo bajo [data-reveal="on"], atributo que
+   pone un script en línea cuando hay JS y el usuario no pidió reducir
+   movimiento. Sin JS, nada se oculta.
+   =========================================================================== */
+
+[data-reveal="on"] .reveal {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+}
+
+[data-reveal="on"] .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Inclinación con el cursor. Las variables las escribe TiltCard. */
+.tilt > * {
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Solo con ratón: en táctil no hay hover y la inclinación no aporta nada. */
+@media (pointer: coarse) {
+  .tilt > * {
+    transform: none;
+  }
+}
+
+/* Micro-interacción de las tarjetas de programa. */
+.program-card {
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease;
+}
+
+.group:hover .program-card {
+  transform: translateY(-4px);
+}
+
+.program-card-image {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.group:hover .program-card-image {
+  transform: scale(1.05);
+}
+
+/* --- Efectos ligados al scroll, sin JS -------------------------------------
+   animation-timeline: view() lo soportan Chrome y Edge (también en Android).
+   Donde no existe, la página se ve exactamente como antes: es una mejora
+   progresiva, no un requisito. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Hero: la imagen se aleja despacio mientras se sale de pantalla. */
+    .hero-parallax {
+      animation: hero-drift linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+
+    /* Hero: el velo se cierra a medida que bajas, para dar profundidad. */
+    .hero-scrim {
+      animation: scrim-deepen linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+
+    /* Consultoría: la imagen entra ampliada y se asienta. */
+    .section-parallax {
+      animation: section-settle linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
+}
+
+@keyframes hero-drift {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.08) translate3d(0, 4%, 0);
+  }
+}
+
+@keyframes scrim-deepen {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1.35;
+  }
+}
+
+@keyframes section-settle {
+  from {
+    transform: scale(1.14) translate3d(0, -2%, 0);
+  }
+  to {
+    transform: scale(1.02) translate3d(0, 2%, 0);
+  }
+}
+
+/* En pantallas pequeñas el recorrido se reduce en vez de desactivarse:
+   se mantiene la sensación de profundidad sin desplazamientos bruscos. */
+@media (max-width: 767px) {
+  @keyframes hero-drift {
+    from {
+      transform: scale(1) translate3d(0, 0, 0);
+    }
+    to {
+      transform: scale(1.04) translate3d(0, 2%, 0);
+    }
+  }
+
+  @keyframes section-settle {
+    from {
+      transform: scale(1.06) translate3d(0, -1%, 0);
+    }
+    to {
+      transform: scale(1) translate3d(0, 1%, 0);
+    }
+  }
+}
+
+/* Quien pide menos movimiento no ve ninguno: esto anula todo lo anterior. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .tilt > *,
+  .program-card,
+  .program-card-image,
+  .hero-parallax,
+  .hero-scrim,
+  .section-parallax {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ===========================================================================
+   RECORRIDO DE PROGRAMA  (/mbim-page y futuras páginas de máster)
+
+   El movimiento ligado al scroll de estas páginas lo conduce GSAP + ScrollTrigger,
+   NO animation-timeline. Motivo: animation-timeline solo lo soporta ~84 % del
+   parque de navegadores, así que uno de cada seis visitantes veía la página
+   completamente quieta. GSAP funciona en todos.
+
+   Importante: no reintroduzcas aquí reglas animation-timeline sobre elementos
+   que GSAP anime. Una animación CSS en curso gana a los estilos inline, así que
+   las dos se pelearían por el mismo transform.
+
+   El bloque anterior, "Dinamismo de la home", sí usa animation-timeline y debe
+   quedarse como está.
+   =========================================================================== */
+
+:root {
+  /* Curvas con carácter. Nombradas para no repetir cubic-bezier por el proyecto. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+
+  /* Asimetría deliberada: entrar despacio, salir rápido. */
+  --dur-in: 0.7s;
+  --dur-out: 0.25s;
+}
+
+/* --- Escala tipográfica ---------------------------------------------------
+   Tres niveles y ninguno más. El display solo aparece en los momentos clave. */
+.journey-display {
+  font-size: clamp(3.5rem, 13vw, 12rem);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  font-weight: 800;
+}
+
+.journey-title {
+  font-size: clamp(1.875rem, 4.5vw, 3.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+/* Titular del hero. Vive aparte de .journey-display a propósito: ese se reserva
+   para las CIFRAS de los movimientos 2 y 6, que sí deben ser enormes. Un hero
+   de 12rem obligaba a una apertura de pantalla completa; con este tope la
+   sección cabe en dos tercios de viewport sin perder presencia. */
+.journey-hero-title {
+  font-size: clamp(2.25rem, 6.2vw, 4.75rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+}
+
+/* Escalón intermedio entre .journey-title y el cuerpo. Para titulares que deben
+   ser notorios SIN llegar a display: dentro de una tarjeta o de un panel, el
+   tamaño display compite con el titular de la sección y descuadra la jerarquía. */
+.journey-title-sm {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+/* Rótulo mono, un punto por encima de .journey-eyebrow. Hace de ancla de un
+   bloque cuando no hay una cifra que ocupe ese papel. */
+.journey-label {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Mono como voz técnica. Roboto Mono ya venía cargada y sin usar; en una escuela
+   de ingeniería BIM da carácter de documentación en vez de landing comercial. */
+.journey-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.journey-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* --- Revelado del titular del hero ---------------------------------------
+   CSS puro y a propósito: se dispara con el primer pintado, sin esperar a la
+   hidratación ni a GSAP. El texto del LCP nunca queda oculto por JavaScript. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-line {
+    display: block;
+    animation: hero-line-in 1.1s var(--ease-out-expo) both;
+  }
+
+  .hero-line-2 {
+    animation-delay: 0.12s;
+  }
+
+  .hero-fade {
+    animation: hero-fade-in 1s var(--ease-out-expo) both;
+    animation-delay: 0.3s;
+  }
+
+  .hero-fade-late {
+    animation-delay: 0.45s;
+  }
+}
+
+@keyframes hero-line-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.55em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-fade-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Indicador de scroll del hero: la línea se llena y se vacía en bucle. */
+.scroll-cue {
+  position: relative;
+  overflow: hidden;
+}
+
+.scroll-cue::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 100%;
+  background: currentColor;
+  animation: scroll-cue 2.4s var(--ease-in-out-quint) infinite;
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top center;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top center;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom center;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom center;
+  }
+}
+
+/* --- Botones: relleno por barrido ----------------------------------------
+   El fondo sube desde abajo en vez de conmutar de color. Es la diferencia
+   entre "bien resuelto" y "premium", y cuesta un pseudoelemento. */
+.btn-journey {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color var(--dur-out) var(--ease-out-quart),
+    transform var(--dur-out) var(--ease-out-quart);
+}
+
+.btn-journey::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--btn-fill, currentColor);
+  transform: translateY(101%);
+  transition: transform 0.55s var(--ease-out-expo);
+}
+
+.btn-journey:hover::after,
+.btn-journey:focus-visible::after {
+  transform: translateY(0);
+}
+
+.btn-journey:active {
+  transform: scale(0.975);
+  transition-duration: 0.08s;
+}
+
+/* La flecha acompaña al barrido. */
+.btn-journey .btn-arrow {
+  transition: transform 0.45s var(--ease-out-expo);
+}
+
+.btn-journey:hover .btn-arrow,
+.btn-journey:focus-visible .btn-arrow {
+  transform: translateX(0.3rem);
+}
+
+/* Subrayado que se dibuja, para los enlaces secundarios. */
+.link-draw {
+  position: relative;
+  text-decoration: none;
+}
+
+.link-draw::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.15em;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+
+.link-draw:hover::after,
+.link-draw:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* --- Superficies con carácter --------------------------------------------
+   Esquina superior derecha cortada: una asimetría mínima convierte la tarjeta
+   genérica en algo reconocible. Sombra teñida de azul de marca, no gris. */
+.journey-surface {
+  border-radius: 1.75rem;
+  border-top-right-radius: 0.25rem;
+  transition:
+    transform 0.6s var(--ease-out-expo),
+    border-color 0.4s var(--ease-out-quart),
+    box-shadow 0.6s var(--ease-out-expo);
+}
+
+.journey-surface-light {
+  box-shadow:
+    0 1px 2px rgb(0 40 120 / 0.06),
+    0 12px 32px -12px rgb(0 40 120 / 0.16);
+}
+
+.journey-surface-light:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 1px 2px rgb(0 40 120 / 0.08),
+    0 24px 48px -16px rgb(0 40 120 / 0.24);
+}
+
+/* Borde con degradado en superficies oscuras: más luz arriba, como si la
+   iluminase algo desde el techo. Un borde plano al 10 % se ve de plantilla. */
+.journey-surface-dark {
+  position: relative;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02));
+}
+
+.journey-surface-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.04) 45%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Foco de luz que sigue al cursor dentro de la tarjeta. Las variables --mx/--my
+   las escribe GSAP con quickTo, sin provocar re-render de React. */
+.journey-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    18rem circle at var(--mx, 50%) var(--my, 0%),
+    rgb(0 108 255 / 0.2),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out-quart);
+  pointer-events: none;
+}
+
+.journey-spotlight:hover::after {
+  opacity: 1;
+}
+
+/* --- Carril de módulos (M3) ----------------------------------------------
+   Scroll horizontal NATIVO con scroll-snap. Sustituye al pin de GSAP, que
+   falló tres veces recortando contenido: obligaba a calcular a mano el alto
+   del header, el recorrido y los puntos de anclaje, y al estar la sección
+   anclada cualquier desajuste dejaba texto inalcanzable.
+
+   Aquí la geometría la resuelve el navegador. La garantía de que la tarjeta
+   enfocada SIEMPRE cabe entera es aritmética:
+     · ancho de tarjeta = min(86vw, 30rem) → nunca supera el 86 % del viewport
+     · scroll-snap-align: center → el navegador la centra
+   Con 30rem = 480px, en un viewport de 480px la tarjeta mide 86vw = 413px y
+   sobran 67px. No existe resolución en la que se recorte.
+
+   NO reintroduzcas `pin` aquí sin medirlo antes en un navegador real. */
+.module-rail {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  /* OJO: NO pongas aquí `scroll-behavior: smooth`.
+     Lo hacía, y era el mayor causante de que el carril se sintiera pesado: con
+     esa propiedad el navegador ANIMA todos los desplazamientos, incluido el
+     asentamiento del snap tras cada gesto de rueda o trackpad. El resultado es
+     un carril que va siempre por detrás del dedo.
+     El suavizado se pide explícitamente en el `scrollTo` de las flechas, que sí
+     es una acción deliberada del usuario. */
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* El relleno lateral centra la primera y la última tarjeta en pantallas
+     anchas, y deja margen suficiente en las estrechas. */
+  padding-inline: max(1.5rem, calc((100vw - 72rem) / 2 + 1.5rem));
+  padding-block: 0.5rem 1rem;
+}
+
+.module-rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* El foco del teclado debe verse: el carril es un elemento tabulable. */
+.module-rail:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 4px;
+}
+
+.module-card {
+  position: relative;
+  /* 26rem en vez de 30rem: recorta ~13 % la distancia total del carril (de
+     314rem a 273rem con 10 módulos) y deja ver más tarjetas a la vez, así que
+     se avanza más por cada gesto. Sigue muy por debajo del 86vw que garantiza
+     que la tarjeta enfocada nunca se recorta. */
+  flex: 0 0 min(86vw, 26rem);
+  scroll-snap-align: center;
+  /* Altura uniforme sin depender del viewport: las tarjetas se estiran a la
+     más alta del carril, y el cuerpo absorbe la diferencia. */
+  align-self: stretch;
+}
+
+/* Si una tarjeta tuviera más ítems de los que caben, su cuerpo se desplaza en
+   vertical en lugar de recortarse. Red de seguridad: con el contenido actual
+   no llega a activarse. */
+.module-card-body {
+  overflow-y: auto;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+}
+
+.module-card-body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sombra ÚNICA e idéntica para las 10 tarjetas.
+   Hubo una variante `.module-card-active` que destacaba la centrada con borde
+   azul y halo; se retiró a petición del cliente: los módulos tienen el mismo
+   peso informativo y ninguno debe parecer más importante que otro.
+   **No reintroduzcas realce por tarjeta.** */
+.module-card {
+  box-shadow:
+    0 1px 2px rgb(0 40 120 / 0.05),
+    0 10px 28px -18px rgb(0 40 120 / 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-rail {
+    scroll-behavior: auto;
+  }
+
+  .module-card {
+    opacity: 1 !important;
+  }
+}
+
+/* --- Acordeón con apertura real ------------------------------------------
+   grid-template-rows 0fr → 1fr anima a altura automática sin medir nada con JS. */
+.faq-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows 0.55s var(--ease-out-expo),
+    opacity 0.4s var(--ease-out-quart);
+  opacity: 0;
+}
+
+.faq-panel > * {
+  overflow: hidden;
+}
+
+.faq-row[data-open="true"] .faq-panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.faq-icon {
+  transition: transform 0.5s var(--ease-spring);
+}
+
+.faq-row[data-open="true"] .faq-icon {
+  transform: rotate(135deg);
+}
+
+/* --- Anulación por movimiento reducido -----------------------------------
+   Tercera capa de defensa. La primera es que GSAP ni siquiera se descarga; la
+   segunda, gsap.matchMedia dentro de cada sección. Esta cubre el CSS puro. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-line,
+  .hero-line-2,
+  .hero-fade,
+  .hero-fade-late,
+  .scroll-cue::after,
+  .btn-journey,
+  .btn-journey::after,
+  .btn-journey .btn-arrow,
+  .link-draw::after,
+  .journey-surface,
+  .journey-surface-light:hover,
+  .journey-spotlight::after,
+  .faq-panel,
+  .faq-icon,
+  .timeline-rail,
+  .salary-bar,
+  .salary-row {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  /* Las barras salariales se muestran ya a su longitud final. */
+  .salary-bar {
+    transform: scaleX(1) !important;
+  }
+
+  /* La línea de tiempo no se dibuja: se muestra ya completa. */
+  .timeline-rail {
+    transform: scaleY(1) !important;
+  }
+
+  .scroll-cue {
+    display: none !important;
+  }
+
+  .journey-track {
+    scroll-behavior: auto;
+  }
+
+  .faq-row[data-open="true"] .faq-panel {
+    grid-template-rows: 1fr;
+  }
+}
+
+/* ===========================================================================
+   HEADER FLOTANTE DE CRISTAL
+   ---------------------------------------------------------------------------
+   La barra de navegacion deja de estar pegada al borde y flota dentro de un
+   "shell" con margen. Todo el efecto vive en UNA sola superficie:
+   `.glass-nav` envuelve las dos filas (utilidades + navegacion principal),
+   separadas por una linea de pelo. Es deliberado:
+
+   🚀 RENDIMIENTO — `backdrop-filter` obliga al compositor a re-desenfocar su
+      region en cada fotograma de scroll. Reglas que sostienen el coste:
+        1. UNA capa de blur para todo el header, no una por fila. Dos capas
+           apiladas duplican el trabajo sobre los mismos pixeles.
+        2. El radio del blur NUNCA se anima. Al hacer scroll solo cambian
+           `background-color`, `border-color` y `box-shadow`, que son
+           propiedades baratas de componer. Transicionar `backdrop-filter`
+           forzaria un re-desenfoque completo en cada uno de los ~20
+           fotogramas de la transicion.
+        3. Radio contenido (18px). Por encima de ~30px el coste crece
+           rapido en GPUs integradas y moviles sin aportar apenas.
+        4. Nada de `will-change: backdrop-filter`: el filtro ya promueve el
+           elemento a su propia capa, y declararlo la mantiene viva de mas.
+
+   Los desplegables y el cajon movil comparten el idioma (`.glass-panel`)
+   pero con mucha mas opacidad: llevan texto denso y solo hay uno abierto a
+   la vez, asi que nunca se apilan tres blurs sobre la misma zona.
+   =========================================================================== */
+
+/* Contenedor a ancho completo que solo aporta el margen. No captura clics:
+   el hueco transparente de los lados debe dejar pasar el raton al contenido. */
+.glass-nav-shell {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 40;
+  pointer-events: none;
+  padding: 0.75rem 0.75rem 0;
+}
+
+@media (min-width: 768px) {
+  .glass-nav-shell {
+    padding: 1rem 1.5rem 0;
+  }
+}
+
+/* La pastilla de cristal. */
+.glass-nav {
+  pointer-events: auto;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1440px;
+  overflow: hidden;
+  border: 1px solid var(--nav-glass-border);
+  border-radius: var(--nav-glass-radius);
+  background-color: var(--nav-glass-bg);
+  box-shadow: var(--nav-glass-shadow);
+  transition:
+    background-color 0.35s var(--ease-out-quart, ease),
+    border-color 0.35s var(--ease-out-quart, ease),
+    box-shadow 0.35s var(--ease-out-quart, ease);
+}
+
+/* El desenfoque real, solo donde el navegador lo soporta. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-nav {
+    -webkit-backdrop-filter: blur(var(--nav-glass-blur)) saturate(var(--nav-glass-saturate));
+    backdrop-filter: blur(var(--nav-glass-blur)) saturate(var(--nav-glass-saturate));
+  }
+}
+
+/* Sin backdrop-filter no hay cristal posible: lo que se ve detras llegaria
+   nitido y el texto quedaria sobre una imagen sin desenfocar. Se cierra la
+   superficie casi del todo en vez de servir algo ilegible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-nav,
+  .glass-panel {
+    background-color: var(--background);
+  }
+}
+
+/* Estado con scroll: mas cuerpo y mas sombra para despegarlo del contenido
+   que ahora pasa por debajo. El blur no cambia (ver nota de rendimiento). */
+.glass-nav[data-scrolled="true"] {
+  background-color: var(--nav-glass-bg-scrolled);
+  border-color: var(--nav-glass-border-scrolled);
+  box-shadow: var(--nav-glass-shadow-scrolled);
+}
+
+/* Separador entre la fila de utilidades y la de navegacion principal.
+   Linea de pelo, no un borde de 1px opaco: sobre cristal un borde solido
+   parte la pastilla en dos en vez de articularla. */
+.glass-nav-hairline {
+  border-top: 1px solid var(--nav-glass-hairline);
+}
+
+/* A partir de `lg` la Fila 1 (utilidades de movil/tablet) desaparece del
+   header (ver components/header.tsx) — sin ella encima, la linea de pelo
+   ya no separa nada y se quedaria como un borde suelto en la parte de
+   arriba de la pastilla. Se retira solo en ese rango. */
+@media (min-width: 1024px) {
+  .glass-nav-hairline {
+    border-top: none;
+  }
+}
+
+/* Paneles desplegables y cajon movil. Mismo vocabulario, mas opacos. */
+.glass-panel {
+  background-color: var(--nav-glass-panel);
+  border: 1px solid var(--nav-glass-border-scrolled);
+  box-shadow: var(--nav-glass-shadow-scrolled);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel {
+    -webkit-backdrop-filter: blur(var(--nav-glass-blur)) saturate(var(--nav-glass-saturate));
+    backdrop-filter: blur(var(--nav-glass-blur)) saturate(var(--nav-glass-saturate));
+  }
+}
+
+/* Accesibilidad: quien pide menos transparencia (macOS/iOS "Reducir
+   transparencia", Windows) recibe una superficie opaca. El desenfoque tambien
+   se retira: sin transparencia no pinta nada y solo cuesta. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-nav,
+  .glass-nav[data-scrolled="true"],
+  .glass-panel {
+    background-color: var(--background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Igual en modo de alto contraste. */
+@media (prefers-contrast: more) {
+  .glass-nav,
+  .glass-nav[data-scrolled="true"],
+  .glass-panel {
+    background-color: var(--background);
+    border-color: var(--foreground);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Movimiento reducido: el cambio de estado es instantaneo. El cristal se
+   mantiene (no es movimiento), solo desaparece la transicion. */
+@media (prefers-reduced-motion: reduce) {
+  .glass-nav {
+    transition: none;
+  }
+}
+
+/* Mientras el cajon movil esta abierto lo tapa todo, asi que la pastilla que
+   queda debajo solo sirve para desenfocar una segunda capa a pantalla completa
+   en el dispositivo mas debil. `visibility: hidden` la saca del pintado, no
+   solo de la vista. Acotado a movil: en lg+ el cajon no existe y el estado
+   podria quedarse activo tras redimensionar la ventana. */
+@media (max-width: 1023px) {
+  .glass-nav-shell[data-menu-open="true"] {
+    visibility: hidden;
+  }
+}
+
+/* ===========================================================================
+   SUBMENÚS DEL HEADER — MISMO CRISTAL, MÁS CARÁCTER
+   ---------------------------------------------------------------------------
+   `DropdownMenuContent` (Radix, components/ui/dropdown-menu.tsx) trae de
+   fábrica un fade+zoom genérico de `tw-animate-css` (`@import` en la línea 2
+   de este archivo). Las reglas de aquí no tocan ese componente compartido
+   —nadie más lo usa hoy salvo este header, pero mantenerlo intacto evita que
+   un futuro consumidor herede una animación pensada solo para el header—:
+   le ganan al fade+zoom por como funcionan las cascade layers de CSS. Un
+   import de una hoja de estilos entra en su propia layer; una regla normal
+   sin `@layer` (como todo este archivo) tiene SIEMPRE prioridad sobre
+   cualquier regla en layer, sin importar especificidad. No hace falta
+   `!important` ni tocar el componente.
+
+   El origen del "crecimiento" (`transform-origin`) ya lo resuelve Radix solo:
+   `origin-(--radix-dropdown-menu-content-transform-origin)` viene en la clase
+   por defecto del componente y apunta al propio trigger que se pulsó.
+   =========================================================================== */
+
+.nav-dropdown {
+  --nav-dropdown-glow: 0 24px 60px -20px rgb(0 108 255 / 0.35), 0 10px 26px -14px rgb(15 23 42 / 0.30);
+  box-shadow: var(--nav-dropdown-glow), inset 0 1px 0 var(--nav-dropdown-highlight, rgb(255 255 255 / 0.5));
+}
+
+.dark .nav-dropdown {
+  --nav-dropdown-highlight: rgb(255 255 255 / 0.08);
+}
+
+/* Fade y escala se animan por separado: la escala lleva rebote
+   (`--ease-spring`, la misma curva que ya usan los CTA de programa) y el
+   fade una curva limpia — mezclarlos en una sola animation() haría que el
+   overshoot de la escala tambien tironeara la opacidad. */
+.nav-dropdown[data-state="open"] {
+  animation:
+    navDropdownFadeIn 0.22s var(--ease-out-quart) both,
+    navDropdownScaleIn 0.45s var(--ease-spring) both;
+}
+
+.nav-dropdown[data-state="closed"] {
+  animation:
+    navDropdownFadeOut 0.14s var(--ease-out-quart) both,
+    navDropdownScaleOut 0.14s var(--ease-out-quart) both;
+}
+
+@keyframes navDropdownFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes navDropdownScaleIn {
+  from { transform: scale(0.9) translateY(-10px); }
+  to { transform: scale(1) translateY(0); }
+}
+
+@keyframes navDropdownFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes navDropdownScaleOut {
+  from { transform: scale(1) translateY(0); }
+  to { transform: scale(0.96) translateY(-6px); }
+}
+
+/* Cada opción del submenú: pastilla de fondo al pasar el cursor (el mismo
+   lavado `bg-brand/10` que ya usan los disparadores del menú principal —
+   ver "Header flotante de cristal" — así el hover del submenú se siente
+   continuación del hover del propio header) + la flecha se desplaza y el
+   texto dibuja su subrayado (`.link-draw`, ya definido más arriba). */
+.nav-dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-inline: -0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.65rem;
+  outline: none;
+  transition: background-color 0.25s var(--ease-out-quart);
+}
+
+.nav-dropdown-link:hover,
+.nav-dropdown-link:focus-visible {
+  background-color: rgb(0 108 255 / 0.1);
+}
+
+.nav-dropdown-icon {
+  transition: transform 0.3s var(--ease-out-expo);
+}
+
+/* Entrada escalonada: cada opción aparece un poco después que la anterior.
+   `nth-child` se reinicia en cada <ul>, así que el escalonado es por grupo
+   (Master Full Time, Master Online...) y no uno larguísimo para todo el
+   panel. Fuera de estas 6 posiciones no hay retraso adicional. */
+.nav-dropdown[data-state="open"] .nav-dropdown-item {
+  animation: navDropdownItemIn 0.4s var(--ease-out-expo) both;
+}
+
+.nav-dropdown-item:nth-child(1) { animation-delay: 0.02s; }
+.nav-dropdown-item:nth-child(2) { animation-delay: 0.06s; }
+.nav-dropdown-item:nth-child(3) { animation-delay: 0.1s; }
+.nav-dropdown-item:nth-child(4) { animation-delay: 0.14s; }
+.nav-dropdown-item:nth-child(5) { animation-delay: 0.18s; }
+.nav-dropdown-item:nth-child(6) { animation-delay: 0.22s; }
+
+@keyframes navDropdownItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Eyebrow de categoría (Master Full Time / Master Online / Recursos...) en
+   Roboto Mono, la misma "voz técnica" que ya usan las páginas de programa
+   para eyebrows y números de módulo — aquí sustituye al <span> en negrita
+   que antes vivía metido como si fuera un elemento más de la lista. */
+.nav-dropdown-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-dropdown-eyebrow::before {
+  content: "";
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: var(--color-brand);
+  flex-shrink: 0;
+}
+
+/* Tarjeta propia para Executive Education dentro de PROGRAMAS: la misma
+   jerarquía que separa "másteres" (postgrado, 12-16 meses) de "formación
+   corta" (cursos cortos, in company) en el resto del sitio se hace visible
+   también aquí, sin añadir una tercera columna ni duplicar contenido. */
+.nav-dropdown-subcard {
+  background: rgb(0 108 255 / 0.05);
+  border: 1px solid rgb(0 108 255 / 0.12);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+/* Movimiento reducido: los paneles siguen abriendo y cerrando, solo sin
+   animar. `animation: none` basta (no hace falta `transform: none`, que
+   además borraría el `rotate-180` de reposo de los iconos de lista). */
+@media (prefers-reduced-motion: reduce) {
+  .nav-dropdown[data-state="open"],
+  .nav-dropdown[data-state="closed"],
+  .nav-dropdown-item,
+  .nav-dropdown-icon,
+  .nav-dropdown-link {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ===========================================================================
+   MÁSTER BIM ONLINE — "LA RED"  (/mbim-online-page)
+
+   Vocabulario propio, deliberadamente distinto del bloque "RECORRIDO DE
+   PROGRAMA" de arriba (MBIM/MBBE/EMBIM). Comparte con él solo lo que es
+   infraestructura de verdad genérica: las curvas de easing de :root, y el
+   mecanismo de revelado del titular del hero (.hero-line/.hero-fade, ya
+   definidos arriba) — no sus clases de composición ni su motivo visual.
+
+   El concepto: esta página no vive en un espacio físico (aula, obra, campus,
+   que es lo que usan las otras tres), vive en la conexión misma — nodos
+   dispersos que convergen en un mismo modelo. Es el concepto real de un CDE
+   (Common Data Environment, Módulo 01 del temario) y la promesa comercial
+   real (misma bolsa de +200 empresas, estés donde estés) al mismo tiempo.
+
+   🚀 Rendimiento: todo el motivo de red es SVG + CSS, cero librerías nuevas.
+   El único momento con scroll-scrubbing fuerte es el grafo del programa
+   (module-graph.tsx) — el resto es reveal-on-enter con `once: true`, igual de
+   barato que el resto del sitio. Ninguna regla de aquí anima `filter` ni
+   `box-shadow` en bucle: solo `transform`, `opacity` y `stroke-dashoffset`.
+   =========================================================================== */
+
+/* --- Escala tipográfica propia -------------------------------------------- */
+.online-display {
+  font-size: clamp(3rem, 11vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.online-hero-title {
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.online-title {
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.online-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.online-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --- Nodo y línea: el motivo visual de toda la página --------------------- */
+.online-node {
+  fill: var(--color-brand);
+}
+
+.online-node-ring {
+  fill: none;
+  stroke: var(--color-brand);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+.online-link {
+  fill: none;
+  stroke: var(--color-brand);
+  stroke-width: 1.25;
+  opacity: 0.3;
+}
+
+/* El trazo que se dibuja al hacer scroll. stroke-dasharray/offset los fija el
+   componente en línea (dependen del largo real de cada trazo); aquí solo el
+   mecanismo de transición para el estado de reposo (reduced motion). */
+.online-link-draw {
+  transition: stroke-dashoffset 1s var(--ease-out-expo);
+}
+
+@keyframes online-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .online-node-pulse {
+    animation: online-pulse 2.8s var(--ease-in-out-quint) infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+}
+
+/* --- Botón de relleno por barrido, vocabulario propio ---------------------- */
+.btn-online {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color var(--dur-out) var(--ease-out-quart),
+    transform var(--dur-out) var(--ease-out-quart);
+}
+
+.btn-online::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--btn-fill, currentColor);
+  transform: translateY(101%);
+  transition: transform 0.55s var(--ease-out-expo);
+}
+
+.btn-online:hover::after,
+.btn-online:focus-visible::after {
+  transform: translateY(0);
+}
+
+.btn-online:active {
+  transform: scale(0.975);
+  transition-duration: 0.08s;
+}
+
+.btn-online .btn-arrow {
+  transition: transform 0.45s var(--ease-out-expo);
+}
+
+.btn-online:hover .btn-arrow,
+.btn-online:focus-visible .btn-arrow {
+  transform: translateX(0.3rem);
+}
+
+/* --- Mapa de calor semanal (sustituye al "día partido") -------------------- */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.week-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--color-brand) 12%, transparent);
+  transform: scaleY(0.4);
+  transform-origin: bottom;
+  opacity: 0;
+  transition:
+    transform 0.5s var(--ease-out-expo),
+    opacity 0.5s var(--ease-out-expo);
+  /* Escalonado barato: un único ScrollTrigger activa `.is-visible` en el
+     contenedor, y cada celda retrasa su propia transición con este índice en
+     vez de necesitar un ScrollTrigger por celda (28 por tarjeta hubiera sido
+     un derroche). */
+  transition-delay: calc(var(--i, 0) * 12ms);
+}
+
+.week-cell[data-active="true"] {
+  background: var(--color-brand);
+}
+
+.week-grid.is-visible .week-cell {
+  transform: scaleY(1);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-cell {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* --- Acordeón, mismo truco de grid-template-rows que .faq-panel ------------ */
+.online-faq-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.5s var(--ease-out-quart);
+}
+
+.online-faq-panel > * {
+  overflow: hidden;
+}
+
+.online-faq-row[data-open="true"] .online-faq-panel {
+  grid-template-rows: 1fr;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-faq-row[data-open="true"] .online-faq-panel {
+    grid-template-rows: 1fr;
+  }
+}
+
+/* --- Superficie oscura con borde de luz suave (para tarjetas sobre gray-950) */
+.online-surface-dark {
+  position: relative;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.015));
+  border-radius: 1.25rem;
+}
+
+.online-surface-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgb(0 108 255 / 0.4), rgb(255 255 255 / 0.05) 55%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-node-pulse {
+    animation: none;
+  }
+}
+
+/* ===========================================================================
+   IN COMPANY — "EL PLANO"  (/in-company-page)
+
+   Tercer vocabulario visual propio del sitio (junto a "RECORRIDO DE PROGRAMA"
+   y "MÁSTER BIM ONLINE"). Esta página es un servicio B2B, no una de las
+   cuatro páginas de máster, así que su motivo no es un espacio físico ni una
+   red — es el documento técnico: líneas de cota punteadas, ticks de medida,
+   crucetas de registro de esquina. La formación se presenta literalmente
+   "medida" para la empresa, en el mismo lenguaje visual que un despacho AEC
+   usa para acotar un plano.
+
+   Comparte con los otros dos bloques solo infraestructura genérica real: las
+   curvas de easing de :root y el mecanismo .hero-line/.hero-fade. Todo lo
+   demás (tipografía, botón, superficies) tiene su propio nombre — no porque
+   el mecanismo cambie, sino para que esta página tenga su propio vocabulario
+   en el CSS, igual que ya se hizo con `.online-*`.
+   =========================================================================== */
+
+.blueprint-line {
+  fill: none;
+  stroke: var(--color-brand);
+  stroke-width: 0.5;
+}
+
+.blueprint-node {
+  fill: var(--color-brand);
+}
+
+.blueprint-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.blueprint-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.blueprint-hero-title {
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.blueprint-title {
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.blueprint-display {
+  font-size: clamp(3rem, 10vw, 7rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Marcas de registro de esquina, como las de un plano impreso — pequeñas y en
+   las cuatro esquinas del marco, NO una cruceta gigante cruzando la foto
+   entera (la primera versión lo hacía y quedaba como una mira de puntería
+   sobre la persona de la imagen). */
+.blueprint-frame {
+  position: relative;
+}
+
+.blueprint-frame [data-corner] {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.blueprint-frame [data-corner]::before,
+.blueprint-frame [data-corner]::after {
+  content: "";
+  position: absolute;
+  background: rgb(255 255 255 / 0.55);
+}
+
+.blueprint-frame [data-corner]::before {
+  inset-inline: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.blueprint-frame [data-corner]::after {
+  inset-block: 0;
+  left: 50%;
+  width: 1px;
+}
+
+/* Línea de cota punteada, con ticks en los extremos (los ticks los pinta el
+   propio componente como pseudo-bordes de sus extremos, esto es solo el trazo). */
+.blueprint-dimline {
+  border-top: 1px dashed color-mix(in oklab, var(--color-brand) 45%, transparent);
+}
+
+/* Retícula de fondo del hero: puntos finos, no ruido — a diferencia de la
+   filosofía "nunca fondos planos" del repo de skills instalado, aquí se
+   mantiene deliberadamente sutil (criterio ya pactado con el cliente:
+   "menos elementos, mejor ejecutados"). */
+.blueprint-grid {
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.14) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.btn-blueprint {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color var(--dur-out) var(--ease-out-quart),
+    transform var(--dur-out) var(--ease-out-quart);
+}
+
+.btn-blueprint::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--btn-fill, currentColor);
+  transform: translateY(101%);
+  transition: transform 0.55s var(--ease-out-expo);
+}
+
+.btn-blueprint:hover::after,
+.btn-blueprint:focus-visible::after {
+  transform: translateY(0);
+}
+
+.btn-blueprint:active {
+  transform: scale(0.975);
+  transition-duration: 0.08s;
+}
+
+.btn-blueprint .btn-arrow {
+  transition: transform 0.45s var(--ease-out-expo);
+}
+
+.btn-blueprint:hover .btn-arrow,
+.btn-blueprint:focus-visible .btn-arrow {
+  transform: translateX(0.3rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blueprint-step-rail {
+    transform: none !important;
+  }
+}
+
+/* =============================================================================
+   TIENDA — "EL CATÁLOGO TÉCNICO"  (/tienda y /producto/[slug])
+
+   Cuarto vocabulario visual propio del sitio (junto a "RECORRIDO DE
+   PROGRAMA", "MÁSTER BIM ONLINE" y "IN COMPANY — EL PLANO"). A diferencia de
+   esas tres, la tienda no vende una experiencia — su trabajo es dejar
+   comparar y elegir rápido. Por eso el motivo no es narrativo: es la ficha
+   técnica. Roboto Mono para todo dato objetivo (precio, duración,
+   modalidad, certificación), en la MISMA posición en cada tarjeta, como una
+   etiqueta nutricional — el ojo aprende dónde mirar y no tiene que releer
+   cada tarjeta entera para comparar dos productos.
+   ========================================================================= */
+
+.catalogo-eyebrow {
+  font-family: var(--font-roboto-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+
+.catalogo-mono {
+  font-family: var(--font-roboto-mono), monospace;
+}
+
+/* --- Tarjeta de producto: ficha comparable ------------------------------- */
+
+.catalogo-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition:
+    border-color 0.25s var(--ease-out-quart),
+    box-shadow 0.25s var(--ease-out-quart);
+}
+
+.catalogo-card:hover {
+  border-color: var(--color-brand);
+  box-shadow: 0 4px 24px -8px rgba(0, 108, 255, 0.25);
+}
+
+/* Fila de especificación: misma altura en todas las tarjetas, con o sin
+   dato — si falta, se pinta un guion en vez de colapsar la fila. Es lo que
+   hace que las tarjetas queden alineadas entre sí como una tabla. */
+.catalogo-spec-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  min-height: 2rem;
+}
+
+.catalogo-spec-row:last-child {
+  border-bottom: none;
+}
+
+.catalogo-spec-label {
+  font-family: var(--font-roboto-mono), monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.catalogo-spec-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1f2937;
+  text-align: right;
+}
+
+/* --- Panel de filtro persistente ----------------------------------------- */
+
+.catalogo-filter-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.catalogo-filter-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+  text-align: left;
+  transition: background-color 0.15s var(--ease-out-quart);
+}
+
+.catalogo-filter-option:hover {
+  background: #f3f4f6;
+}
+
+.catalogo-filter-option[data-active="true"] {
+  background: var(--color-brand);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.catalogo-filter-option[data-active="true"] .catalogo-filter-count {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.catalogo-filter-count {
+  font-family: var(--font-roboto-mono), monospace;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* --- Ficha de producto: navegación por anclas + barra lateral fija -------- */
+
+.catalogo-anchor-nav {
+  position: sticky;
+  top: calc(var(--header-height) + 1.5rem);
+  align-self: start;
+}
+
+.catalogo-anchor-link {
+  display: block;
+  padding: 0.5rem 0.875rem;
+  border-left: 2px solid #e5e7eb;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  transition:
+    border-color 0.2s var(--ease-out-quart),
+    color 0.2s var(--ease-out-quart);
+}
+
+.catalogo-anchor-link:hover {
+  color: var(--color-brand);
+}
+
+.catalogo-anchor-link[data-active="true"] {
+  border-left-color: var(--color-brand);
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+.catalogo-sticky-cta {
+  position: sticky;
+  top: calc(var(--header-height) + 1.5rem);
+  /* Sin esto, el grid estira el aside a la altura de la columna de
+     contenido (que puede tener miles de px) y "sticky" deja de tener
+     margen donde flotar — el contenido del aside queda clavado arriba de
+     una caja gigante en vez de fijo respecto al viewport durante el scroll. */
+  align-self: start;
+}
+
+.catalogo-ficha-section {
+  scroll-margin-top: calc(var(--header-height) + 1.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalogo-card,
+  .catalogo-filter-option,
+  .catalogo-anchor-link {
+    transition: none !important;
+  }
+}
+
+/* =============================================================================
+   BLOG — "CUADERNO DE BITÁCORA TÉCNICO"  (/blog y el artículo individual)
+
+   Quinto vocabulario visual propio (junto a "RECORRIDO DE PROGRAMA",
+   "MÁSTER BIM ONLINE", "IN COMPANY — EL PLANO" y "EL CATÁLOGO TÉCNICO"). El
+   encargo del blog es sostener la atención en textos largos, así que el
+   giro es editorial: un serif con carácter (Fraunces) para titulares,
+   Roboto Mono para fecha/autor/etiquetas — la misma voz técnica que ya usan
+   las páginas de programa y la tienda, aplicada a metadatos en vez de a
+   toda la tipografía.
+   ========================================================================= */
+
+.bitacora-eyebrow {
+  font-family: var(--font-roboto-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+
+.bitacora-meta {
+  font-family: var(--font-roboto-mono), monospace;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.bitacora-headline {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* --- Tarjeta de la lista compacta (todo salvo el post destacado) --------- */
+
+.bitacora-list-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.5rem;
+  padding: 1.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  transition: opacity 0.2s var(--ease-out-quart);
+}
+
+.bitacora-list-item:hover {
+  opacity: 0.7;
+}
+
+/* --- Mini-índice lateral del artículo ------------------------------------ */
+
+.bitacora-toc {
+  position: sticky;
+  top: calc(var(--header-height) + 1.5rem);
+  align-self: start;
+}
+
+.bitacora-toc-link {
+  display: block;
+  padding: 0.375rem 0 0.375rem 0.875rem;
+  border-left: 2px solid #e5e7eb;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  line-height: 1.4;
+  transition:
+    border-color 0.2s var(--ease-out-quart),
+    color 0.2s var(--ease-out-quart);
+}
+
+.bitacora-toc-link:hover {
+  color: var(--color-brand);
+}
+
+.bitacora-toc-link[data-active="true"] {
+  border-left-color: var(--color-brand);
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+/* --- Artículos relacionados ----------------------------------------------- */
+
+.bitacora-related-card {
+  border-top: 2px solid var(--color-brand);
+  padding-top: 1rem;
+  transition: opacity 0.2s var(--ease-out-quart);
+}
+
+.bitacora-related-card:hover {
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bitacora-list-item,
+  .bitacora-toc-link,
+  .bitacora-related-card {
+    transition: none !important;
+  }
+}
+
+/* =============================================================================
+   FINANCIACIÓN Y BECAS — "EL BALANCE"  (/financiacion-y-becas-page)
+
+   Sexto vocabulario visual propio (junto a "RECORRIDO DE PROGRAMA", "LA RED",
+   "EL PLANO", "EL CATÁLOGO TÉCNICO" y "CUADERNO DE BITÁCORA"). El propósito de
+   esta página no es vender un programa ni narrar una experiencia: es generar
+   confianza para el paso económico. La metáfora es el documento financiero
+   serio — un estado de cuenta, un sello de aprobación — no un espacio físico
+   ni una red de nodos.
+
+   Reutiliza solo infraestructura genérica de verdad: las curvas de easing de
+   :root, el mecanismo de revelado del hero (.hero-line/.hero-fade) y el patrón
+   de acordeón `grid-template-rows` (igual que `.faq-panel`/`.online-faq-panel`).
+   Nada de su motivo visual (el sello, el carril de becas) viene de otra página.
+
+   Densidad de animación deliberadamente alta — a petición explícita del
+   cliente, al mismo nivel que "La Red": cada sección de contenido real tiene
+   su propio reveal de scroll (`useGsapEffect` + ScrollTrigger `once: true`),
+   no solo un momento aislado. El único momento con scroll-scrubbing fuerte es
+   el carril de becas (`balance-ledger.tsx`) — el resto es reveal-on-enter,
+   igual de barato que el resto del sitio. El cierre final se queda estático
+   a propósito, mismo criterio que el cierre de "La Red": después del clímax,
+   una salida en calma se lee mejor que otro efecto compitiendo por atención.
+   =========================================================================== */
+
+/* --- Escala tipográfica propia -------------------------------------------- */
+.balance-display {
+  font-size: clamp(3rem, 11vw, 8rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-hero-title {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.balance-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.balance-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.balance-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --- Tarjeta con borde izquierdo, con leve elevación al pasar el ratón ----- */
+.balance-card {
+  border-radius: 0.75rem;
+  transition:
+    transform 0.3s var(--ease-out-quart),
+    box-shadow 0.3s var(--ease-out-quart);
+}
+
+.balance-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.15);
+}
+
+/* --- Botón de relleno por barrido, vocabulario propio ---------------------- */
+.btn-balance {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color var(--dur-out) var(--ease-out-quart),
+    transform var(--dur-out) var(--ease-out-quart);
+}
+
+.btn-balance::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--btn-fill, currentColor);
+  transform: translateY(101%);
+  transition: transform 0.55s var(--ease-out-expo);
+}
+
+.btn-balance:hover::after,
+.btn-balance:focus-visible::after {
+  transform: translateY(0);
+}
+
+.btn-balance:active {
+  transform: scale(0.975);
+  transition-duration: 0.08s;
+}
+
+.btn-balance .btn-arrow {
+  transition: transform 0.45s var(--ease-out-expo);
+}
+
+.btn-balance:hover .btn-arrow,
+.btn-balance:focus-visible .btn-arrow {
+  transform: translateX(0.3rem);
+}
+
+/* --- Pestañas Full Time / Executive del libro de becas --------------------- */
+.balance-tab {
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: 1px solid color-mix(in oklab, var(--foreground) 15%, transparent);
+  transition:
+    background-color 0.25s var(--ease-out-quart),
+    color 0.25s var(--ease-out-quart),
+    border-color 0.25s var(--ease-out-quart);
+}
+
+.balance-tab:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-strong);
+}
+
+.balance-tab-active {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: white;
+}
+
+/* --- Panel de cada pestaña: mismo truco de grid-template-rows que .faq-panel */
+.balance-ledger-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s var(--ease-out-quart);
+}
+
+.balance-ledger-panel[data-active="true"] {
+  grid-template-rows: 1fr;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balance-ledger-panel {
+    transition: none;
+  }
+}
+
+/* --- Sello de aprobación, el motivo visual de la sección de becas --------- */
+.balance-seal {
+  box-shadow: 0 0 0 3px var(--background);
+}
+
+/* --- Motivo circular de la sección de asesoramiento ------------------------ */
+@keyframes balance-motif-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .balance-motif {
+    animation: balance-motif-spin 40s linear infinite;
+  }
+
+  .balance-motif > * {
+    animation: balance-motif-spin 40s linear infinite reverse;
+  }
+}
+
+/* --- Estado de cuenta, tabla resumen rediseñada ---------------------------- */
+.balance-statement-sheet {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+  overflow: hidden;
+}
+
+.balance-statement-row {
+  padding: 1.5rem;
+}
+
+.balance-statement-row + .balance-statement-row {
+  border-top: 1px dashed color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
+/* =============================================================================
+   BOLSA DE EMPLEO — "EL TABLÓN"  (/bolsa-de-empleo-page)
+
+   Octavo vocabulario visual propio. La metáfora es literal: un tablón de
+   anuncios de empresa, con fichas de oferta que llevan su propia esquina
+   doblada y una "chincheta" en vez de una imagen de stock de gente sonriendo
+   en una oficina. Fondo gray-950, mismo negro que ya usan los M3/M6 de las
+   páginas de programa — no un segundo negro nuevo.
+
+   Misma densidad de animación que "El Balance": cada sección de contenido
+   real tiene su propio scroll-reveal (`useGsapEffect`), con un único momento
+   fuerte (la rejilla de ofertas, cada ficha "clavándose" en el tablón al
+   entrar en pantalla) y un cierre final en calma.
+   =========================================================================== */
+
+.tablon-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.tablon-hero-title {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.tablon-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.tablon-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --- Ficha de oferta: esquina doblada + chincheta ------------------------- */
+.tablon-card {
+  position: relative;
+  border-radius: 0.5rem;
+  background: var(--card);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  transition:
+    transform 0.3s var(--ease-out-quart),
+    box-shadow 0.3s var(--ease-out-quart);
+}
+
+.tablon-card:hover {
+  transform: translateY(-3px) rotate(-0.3deg);
+  box-shadow: 0 12px 28px -14px rgb(0 0 0 / 0.4);
+}
+
+/* Esquina doblada: triángulo recortado con un degradado que simula el papel
+   levantándose, sin ninguna imagen. */
+.tablon-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 50%
+  );
+  border-radius: 0 0.5rem 0 0.5rem;
+  pointer-events: none;
+}
+
+.tablon-pin {
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.35);
+}
+
+/* --- Botón de relleno por barrido, vocabulario propio ---------------------- */
+.btn-tablon {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color var(--dur-out) var(--ease-out-quart),
+    transform var(--dur-out) var(--ease-out-quart);
+}
+
+.btn-tablon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--btn-fill, currentColor);
+  transform: translateY(101%);
+  transition: transform 0.55s var(--ease-out-expo);
+}
+
+.btn-tablon:hover::after,
+.btn-tablon:focus-visible::after {
+  transform: translateY(0);
+}
+
+.btn-tablon:active {
+  transform: scale(0.975);
+  transition-duration: 0.08s;
+}
+
+.btn-tablon .btn-arrow {
+  transition: transform 0.45s var(--ease-out-expo);
+}
+
+.btn-tablon:hover .btn-arrow,
+.btn-tablon:focus-visible .btn-arrow {
+  transform: translateX(0.3rem);
+}
+
+/* =============================================================================
+   SOBRE IDESIE — "LA TRAYECTORIA"  (/sobre-idesie-page)
+
+   Noveno vocabulario visual propio. Primera de tres páginas institucionales
+   (Sobre IDESIE, Nuestra Metodología, Profesores) pensadas para decisores —
+   directores de talento, CIOs, alumnos evaluando en serio — no para "vender
+   una experiencia". Comparten con el resto del sitio la misma pareja
+   tipográfica (Inter para titulares, Roboto Mono para metadatos/cifras): no
+   se introduce una tercera familia solo para estas tres, sería romper la
+   disciplina tipográfica que ya sostiene los otros ocho vocabularios. La
+   diferenciación es de composición, escala y motivo animado — no de fuente.
+
+   El motivo de "La Trayectoria" es el hilo cronológico: un carril que se
+   dibuja al hacer scroll con tres hitos reales (2012 fundación, acreditación,
+   hoy) — sin fechas inventadas entre medias. Reutiliza el mecanismo genérico
+   de carril+sello ya usado en "El Balance" (es infraestructura de
+   scroll-reveal, no un motivo importado) aplicado a un concepto distinto: una
+   línea de tiempo real, no un libro de becas.
+
+   El botón usa `.btn-sweep` (genérico, ver el bloque "SISTEMA GLOBAL DE
+   MOVIMIENTO") en vez de un `.btn-trayectoria` propio — estas tres páginas
+   institucionales no tienen la densidad de CTAs de una página de venta, así
+   que no se justifica un cuarto vocabulario de botón solo para ellas.
+   =========================================================================== */
+
+.trayectoria-hero-title {
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.trayectoria-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.trayectoria-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.trayectoria-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/* --- Nodo de hito sobre el carril, mismo halo que .balance-seal ----------- */
+.trayectoria-node {
+  box-shadow: 0 0 0 3px var(--color-gray-950, #030712);
+}
+
+/* =============================================================================
+   NUESTRA METODOLOGÍA — "EL CICLO PRÁCTICO"  (/nuestra-metodologia-page)
+
+   Décimo vocabulario visual propio. Segunda de las tres páginas
+   institucionales (ver "Sobre IDESIE — La Trayectoria" justo arriba para el
+   contexto compartido). El motivo es un ciclo cerrado — Aplicar → Tutelar →
+   Consolidar → vuelve a Aplicar — deliberadamente distinto del "día
+   partido" que ya usan las páginas de máster para Learning by Working a
+   nivel de programa: aquí no hay dos mitades del día, hay un proceso
+   continuo que se repite con cada proyecto real.
+
+   Igual que "La Trayectoria", sin fuente propia — Inter + Roboto Mono,
+   misma disciplina que el resto del sitio.
+   =========================================================================== */
+
+.ciclo-hero-title {
+  font-size: clamp(2.5rem, 6.5vw, 4.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.ciclo-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.ciclo-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.ciclo-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --- Tarjeta de fase del ciclo, leve elevación al pasar el ratón ---------- */
+.ciclo-phase-card {
+  transition:
+    transform 0.3s var(--ease-out-quart),
+    border-color 0.3s var(--ease-out-quart),
+    background-color 0.3s var(--ease-out-quart);
+}
+
+.ciclo-phase-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in oklab, var(--color-brand) 50%, transparent);
+  background-color: rgb(255 255 255 / 0.07);
+}
+
+/* --- Marquee infinito de empresas colaboradoras ---------------------------
+   El array ya llega duplicado desde el componente (loop sin costura a mitad
+   de recorrido). CSS puro, sin GSAP: es decoración ambiental, no un momento
+   de scroll — coherente con no gastar el "único momento fuerte" aquí, que
+   ya es el ciclo. */
+.ciclo-marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ciclo-marquee {
+    animation: ciclo-marquee-scroll 46s linear infinite;
+  }
+
+  .ciclo-marquee-mask:hover .ciclo-marquee,
+  .ciclo-marquee-mask:focus-within .ciclo-marquee {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes ciclo-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* =============================================================================
+   PROFESORES — "EL ÍNDICE DE EXPERTOS"  (/profesores-page)
+
+   Undécimo vocabulario visual propio. Tercera de las tres páginas
+   institucionales. Directorio editorial tipo masthead de revista — no la
+   galería de tarjetas "meet the team" que tenía la versión anterior — a
+   propósito: las 17 fotos que esa versión referenciaba no existen en
+   ningún sitio de `public/images/` (404 confirmado, uno por uno), así que
+   cualquier dirección que dependiera de fotografía real para funcionar se
+   habría visto como una web a medio terminar. El monograma
+   (`indice-monogram.tsx`) es una mejora que se sustituye sola por una foto
+   real el día que exista, sin rediseñar nada.
+
+   Sin fuente propia — Inter + Roboto Mono, misma disciplina que "La
+   Trayectoria" y "El Ciclo Práctico".
+   =========================================================================== */
+
+.indice-hero-title {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.indice-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.indice-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.indice-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Monograma: 3 variantes fijas en tonos de marca, cicladas por índice -- */
+.indice-monogram-0 {
+  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-strong));
+}
+
+.indice-monogram-1 {
+  background: linear-gradient(135deg, var(--color-brand-strong), var(--color-gray-950, #030712));
+}
+
+.indice-monogram-2 {
+  background: linear-gradient(135deg, var(--color-gray-950, #030712), var(--color-brand));
+}
+
+/* --- Fila del índice: subrayado que se dibuja al pasar el ratón ----------- */
+.indice-row {
+  position: relative;
+  transition: background-color 0.25s var(--ease-out-quart);
+}
+
+.indice-row:hover,
+.indice-row:focus-visible {
+  background-color: color-mix(in oklab, var(--color-brand) 5%, transparent);
+}
+
+.indice-plus {
+  transition: transform 0.35s var(--ease-out-expo);
+}
+
+.indice-plus-open {
+  transform: rotate(45deg);
+}
+
+/* --- Panel de bio: mismo truco de grid-template-rows que .faq-panel ------- */
+.indice-bio-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s var(--ease-out-quart);
+}
+
+.indice-bio-panel[data-active="true"] {
+  grid-template-rows: 1fr;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indice-bio-panel,
+  .indice-plus {
+    transition: none;
+  }
+}
+
+/* =============================================================================
+   ALUMNOS — "EL LEGADO"  (/alumni-page)
+
+   Duodécimo vocabulario visual propio. Primera de tres páginas de prueba
+   social (Alumnos, Alianzas Académicas, Opiniones) — hermanas de las 3
+   páginas institucionales (Sobre IDESIE, Metodología, Profesores) pero con
+   un propósito distinto: aquí la confianza viene de terceros (alumnos,
+   instituciones, reseñas), no de la propia institución hablando de sí
+   misma. Misma disciplina tipográfica (Inter + Roboto Mono), sin fuente
+   nueva.
+
+   El motivo de "El Legado" es el carril de "La Trayectoria" (Sobre IDESIE)
+   aplicado a escala de una persona: cada alumno tiene su propio arco real
+   "Programa → Hoy", con solo 2 nodos — es el único par de puntos que los
+   datos reales sostienen, no se inventa ninguna biografía intermedia. Es un
+   eco deliberado de familia (institución ↔ individuo), no una copia.
+   =========================================================================== */
+
+.legado-hero-title {
+  font-size: clamp(2.5rem, 6.5vw, 4.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.legado-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.legado-quote {
+  font-size: clamp(1.375rem, 3.2vw, 2rem);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+.legado-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.legado-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/* --- Monograma del alumno: mismas 3 variantes en tonos de marca que "El
+   Índice de Expertos" (Profesores) — mismo mecanismo, sin fuente ni imagen
+   compartida entre componentes de página distintos, cada uno la declara. */
+.legado-monogram-0 {
+  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-strong));
+}
+
+.legado-monogram-1 {
+  background: linear-gradient(135deg, var(--color-brand-strong), var(--color-gray-950, #030712));
+}
+
+.legado-monogram-2 {
+  background: linear-gradient(135deg, var(--color-gray-950, #030712), var(--color-brand));
+}
+
+/* =============================================================================
+   ALIANZAS ACADÉMICAS — "EL CONVENIO"  (/alianzas-page)
+
+   Decimotercer vocabulario visual propio. Segunda de las tres páginas de
+   prueba social. El mensaje no es "cuántos logos tenemos": las 3 alianzas
+   reales tienen 3 modelos de colaboración distintos (intercambio,
+   orientación profesional, licencia de contenido) — el diseño hace legible
+   esa diferencia con una etiqueta de tipo de colaboración propia por
+   alianza, no un grid de tarjetas idénticas.
+   =========================================================================== */
+
+.convenio-hero-title {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.convenio-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.convenio-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.convenio-mono {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* --- Emblema circular para alianzas sin foto real -------------------------
+   Mismo mecanismo que `.balance-motif` (anillo en rotación lenta, contenido
+   central contrarrotado para que el texto no gire) — infraestructura CSS
+   genérica, reutilizada con su propio contenido (iniciales de la
+   institución + país), no la identidad de "El Balance". */
+@keyframes convenio-motif-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .convenio-motif {
+    animation: convenio-motif-spin 44s linear infinite;
+  }
+
+  .convenio-motif > * {
+    animation: convenio-motif-spin 44s linear infinite reverse;
+  }
+}
+
+/* =============================================================================
+   OPINIONES — "EL ARCHIVO DE VOCES"  (/opiniones-page)
+
+   Decimocuarto vocabulario visual propio. Tercera y última página de prueba
+   social. Deliberadamente el más restringido de los tres: sin tarjetas de
+   degradado azul, sin marquee, sin motivo decorativo — la autenticidad de
+   un testimonio real se comunica con tipografía y restricción, no con
+   producción visual. Diferenciación explícita de "El Legado" (Alumnos): ahí
+   la cita viene con un arco de carrera; aquí la cita es la única
+   protagonista.
+   =========================================================================== */
+
+.voces-hero-title {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.voces-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.voces-quote {
+  font-size: clamp(1.25rem, 2.8vw, 1.625rem);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.voces-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.voces-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* =============================================================================
+   CARRITO Y CHECKOUT — "PEDIDO"  (CartDrawer, /checkout)
+
+   Decimoquinto vocabulario visual propio, y el primero que no es una página
+   de contenido: es el momento de conversión real, donde hay dinero de por
+   medio. Identidad propia a petición explícita del cliente (no hereda el
+   lenguaje de "El Catálogo Técnico" de /tienda) — pero deliberadamente sin
+   nombre-concepto narrativo: en un flujo de pago la claridad pesa más que
+   una metáfora, así que es simplemente "Pedido".
+
+   Reutiliza infraestructura genérica ya existente (`.glass-panel` para el
+   drawer y la barra móvil, `.btn-sweep`, `data-magnetic`, las curvas de
+   easing de :root) y añade solo lo que es propio de esta identidad: la
+   tarjeta de sección numerada ("Paso 1/2/3/4"), el estado de verificación
+   del importe, y las micro-interacciones de fila (alta/baja de artículo).
+   =========================================================================== */
+
+.pedido-title {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.pedido-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.pedido-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --- Tarjeta de sección, compartida por las 4 "Paso N" del checkout ------- */
+.pedido-card {
+  border-radius: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.04);
+}
+
+.pedido-summary-card {
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.14);
+}
+
+/* --- Fila de artículo: entrada/salida ---------------------------------- */
+.pedido-row {
+  transition:
+    opacity 0.25s var(--ease-out-quart),
+    transform 0.25s var(--ease-out-quart);
+}
+
+.pedido-row[data-removing] {
+  opacity: 0;
+  transform: translateX(14px);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedido-row {
+    transition: none;
+  }
+}
+
+.pedido-remove-btn {
+  transition: color 0.2s var(--ease-out-quart);
+}
+
+/* --- Etiqueta de matrícula ------------------------------------------------ */
+.pedido-badge {
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-brand) 12%, transparent);
+  color: var(--color-brand-strong);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.125rem 0.5rem;
+}
+
+/* --- Cupón aplicado -------------------------------------------------------- */
+.pedido-coupon-applied {
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--color-brand) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-brand) 25%, transparent);
+  animation: pedido-coupon-in 0.4s var(--ease-out-expo) both;
+}
+
+@keyframes pedido-coupon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedido-coupon-applied {
+    animation: none;
+  }
+}
+
+/* --- Total: pulsa mientras se verifica en servidor, se asienta al confirmar */
+.pedido-total {
+  display: inline-block;
+  transition:
+    opacity 0.3s var(--ease-out-quart),
+    transform 0.3s var(--ease-spring);
+}
+
+.pedido-total[data-status="verifying"] {
+  opacity: 0.55;
+}
+
+.pedido-total[data-status="verified"] {
+  animation: pedido-total-settle 0.4s var(--ease-spring) both;
+}
+
+@keyframes pedido-total-settle {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedido-total {
+    transition: none;
+  }
+  .pedido-total[data-status="verified"] {
+    animation: none;
+  }
+}
+
+/* --- Drawer del carrito: desliza desde la derecha, overlay real ----------- */
+.pedido-drawer-overlay {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease-out-quart);
+}
+
+.pedido-drawer-overlay[data-state="open"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pedido-drawer {
+  transform: translateX(100%);
+  transition: transform 0.4s var(--ease-out-expo);
+}
+
+.pedido-drawer[data-state="open"] {
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedido-drawer-overlay,
+  .pedido-drawer {
+    transition: none;
+  }
+}
+
+/* --- Barra fija de total en móvil ------------------------------------------ */
+.pedido-mobile-bar {
+  border-radius: 0;
+  border-inline: none;
+  border-bottom: none;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* =============================================================================
+   /LANDING — vídeo del hero
+
+   🔓 2026-09-05: el bloqueo de página completa hasta ver 60s reales
+   (`GatedContent`, `VideoGateBanner`, el pulso al intentar hacer scroll)
+   se retiró por completo en el rediseño de /landing — decisión explícita
+   del cliente: es tráfico de pago, cada segundo de fricción antes del CTA
+   cuesta conversión. Las reglas que sostenían ese mecanismo (`.gated-*`,
+   `.video-gate-*`, `.hero-video-pulse`) se eliminaron con él, no quedan
+   como CSS muerto.
+   =========================================================================== */
+
+/* --- Placeholder de vídeo (testimonios de /landing): barrido de brillo,
+   comunica "en preparación" en vez de "hueco vacío" -------------------------
+   2026-09-04 (31): reescrito tras la auditoría contra las Web Interface
+   Guidelines de Vercel. Antes animaba `background-position` sobre un fondo
+   al 200% — no es "compositor-friendly" (la regla pide animar solo
+   `transform`/`opacity`). Ahora es una banda de gradiente más estrecha que
+   el propio contenedor, desplazada con `transform: translateX()` — mismo
+   efecto visual, cumple la regla al pie de la letra.
+
+   También se ralentizó y se le dieron pausas al principio y al final del
+   recorrido (en vez de un bucle continuo a ritmo constante): un shimmer
+   rápido y sin pausa es exactamente el lenguaje visual de un skeleton-loader
+   real ("esto se está cargando ahora mismo") — aquí no hay ningún proceso
+   cargando, así que el barrido debe leerse como una textura ambiental
+   premium, no como una promesa de carga que nunca se cumple. */
+@media (prefers-reduced-motion: no-preference) {
+  .video-placeholder-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    left: 0;
+    width: 45%;
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      rgb(0 108 255 / 0.08) 40%,
+      rgb(0 108 255 / 0.14) 50%,
+      rgb(0 108 255 / 0.08) 60%,
+      transparent 100%
+    );
+    transform: translateX(-220%);
+    animation: video-placeholder-shimmer-kf 6.5s ease-in-out infinite;
+  }
+}
+
+@keyframes video-placeholder-shimmer-kf {
+  0%,
+  22% {
+    transform: translateX(-220%);
+  }
+  62%,
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+/* --- Los 4 másteres (/landing): "El Selector" ------------------------------
+   2026-09-05 — rediseño completo de esta sección (dirección 2 de 3
+   propuestas con la skill `awwwards`, elegida por el cliente): sustituye
+   por completo al grid/carril de tarjetas anterior (`.masters-rail`,
+   retirada). Ahora es un panel único con 4 pestañas — un programa visible
+   en detalle a la vez, no los 4 compitiendo por atención.
+
+   🔒 El cambio de contenido al pulsar una pestaña es 100% disparado por
+   clic (`key={activeIndex}` fuerza el remontaje de React, esta animación
+   de entrada corre en ese montaje) — CERO scroll-scrub, cero ScrollTrigger,
+   cero dependencia de Lenis. No hay ningún contenedor con overflow/scroll
+   propio en este componente, así que no puede reproducirse aquí el mismo
+   conflicto que tuvo el scroll interno de `AdmisionModal` con la Lenis
+   global — no hay ningún scroll que interceptar. */
+.masters-selector-panel-enter-right {
+  animation: masters-selector-in-right 0.5s var(--ease-out-quart) both;
+}
+
+.masters-selector-panel-enter-left {
+  animation: masters-selector-in-left 0.5s var(--ease-out-quart) both;
+}
+
+@keyframes masters-selector-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes masters-selector-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .masters-selector-panel-enter-right,
+  .masters-selector-panel-enter-left {
+    animation: none;
+  }
+}

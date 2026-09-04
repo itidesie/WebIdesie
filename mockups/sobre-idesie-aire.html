@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maqueta · Sobre IDESIE — «Aire» (valores protagonistas)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===========================================================================
+   MAQUETA — «Aire». Protagonista: los 5 valores.
+   Reglas que me he impuesto:
+     · Un solo acento de color (el azul de marca) y solo en 3 sitios:
+       el punto del rótulo, la palabra "comunidad" y los iconos.
+     · Nada de cajas, marcos, sombras ni líneas divisorias.
+     · Dos movimientos: la entrada de los valores y el enfoque al pasar
+       el cursor. El resto está quieto.
+   =========================================================================== */
+
+:root {
+  --brand: #006cff;
+  --ink:   #0d1117;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #52586a;
+  --line: #ececf0;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Ayuda de la maqueta; NO forma parte del diseño. */
+.mock-note { background: #0d1117; color: #fff; font-size: 13px; padding: 14px 20px; text-align: center; }
+.mock-note b { color: #7ab6ff; }
+.mock-spacer { height: 14vh; }
+
+.wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+@media (min-width: 768px) { .wrap { padding: 0 40px; } }
+
+/* --- Sección: mucho aire vertical --------------------------------------- */
+.about { padding: 88px 0; background: #fff; }
+@media (min-width: 768px) { .about { padding: 150px 0; } }
+
+/* --- Bloque de entrada: compacto, subordinado ---------------------------- */
+.intro {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .intro { grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr); gap: 72px; }
+}
+
+/* Rótulo: sin píldora, sin fondo. Un punto de acento y texto pequeño. */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--gray-400);
+}
+.eyebrow::before {
+  content: ""; width: 5px; height: 5px; border-radius: 999px;
+  background: var(--brand); flex: none;
+}
+
+/* Titular: peso medio, tamaño contenido. No compite con los valores. */
+.headline {
+  margin-top: 22px;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  line-height: 1.14;
+  font-size: clamp(1.9rem, 4vw, 3.1rem);
+  max-width: 18ch;
+}
+.headline em { font-style: normal; color: var(--brand); }
+
+.lede {
+  margin-top: 28px;
+  max-width: 52ch;
+  color: var(--gray-600);
+  font-size: 1rem;
+  line-height: 1.82;
+}
+@media (min-width: 768px) { .lede { font-size: 1.0625rem; } }
+
+/* Segundo párrafo: aparece al avanzar, nunca se ven los dos bloques a la vez. */
+.lede-2 { margin-top: 20px; }
+.lede-2 strong { font-weight: 600; color: var(--ink); }
+
+/* Los 3 chips: una línea fina, gris, sin cajas. */
+.chips {
+  list-style: none; margin-top: 34px;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--gray-400);
+  line-height: 2.2;
+}
+.chips li { display: inline; }
+.chips li:not(:last-child)::after {
+  content: "/"; margin: 0 12px; color: var(--line);
+}
+
+/* --- Vídeo: secundario. Sin marco, sin borde, sin sombra. ---------------- */
+.video {
+  position: relative; display: block; width: 100%;
+  border: 0; padding: 0; background: none; cursor: pointer;
+  border-radius: 14px; overflow: hidden;
+  aspect-ratio: 4 / 3;
+}
+@media (min-width: 900px) { .video { aspect-ratio: 16 / 10; } }
+
+.video img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: grayscale(0.55) contrast(1.02) brightness(0.9);
+  transform: scale(1.02);
+  transition: filter 0.6s var(--ease), transform 0.9s var(--ease);
+}
+.video:hover img, .video:focus-visible img {
+  filter: grayscale(0) brightness(1);
+  transform: scale(1.06);
+}
+
+.video-play {
+  position: absolute; left: 20px; bottom: 20px;
+  display: inline-flex; align-items: center; gap: 11px;
+  color: #fff; font-size: 12px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.video-play span.disc {
+  width: 40px; height: 40px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.4s var(--ease);
+}
+.video-play span.disc svg { width: 13px; height: 13px; fill: var(--ink); margin-left: 2px; }
+.video:hover .video-play span.disc { transform: scale(1.1); }
+.video:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
+
+/* --- LOS VALORES: la pieza protagonista ---------------------------------- */
+.values {
+  margin-top: 110px;
+  border-top: 1px solid var(--line);
+  padding-top: 64px;
+}
+@media (min-width: 768px) { .values { margin-top: 128px; padding-top: 88px; } }
+
+.values-eyebrow {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--gray-400);
+  margin-bottom: 56px;
+}
+@media (min-width: 768px) { .values-eyebrow { margin-bottom: 76px; } }
+
+.value-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 52px 32px;
+}
+@media (min-width: 700px)  { .value-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 64px 40px; } }
+@media (min-width: 1024px) { .value-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0 32px; } }
+
+.value {
+  transition: opacity 0.45s var(--ease);
+}
+
+/* display:block es imprescindible: es un <span>, y en inline el ancho y el
+   alto se ignoran, con lo que el SVG se estiraba a todo el ancho de columna. */
+.value-icon {
+  display: block;
+  width: 60px; height: 60px; color: var(--brand);
+  transition: transform 0.5s var(--ease);
+}
+.value-icon svg { width: 100%; height: 100%; stroke-width: 1.15; }
+.value:hover .value-icon { transform: translateY(-4px); }
+
+.value-title {
+  margin-top: 32px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--ink);
+}
+@media (min-width: 768px) { .value-title { font-size: 1.5rem; } }
+
+/* La descripción existe siempre en el DOM (lectores de pantalla la leen);
+   solo su visibilidad depende del cursor. Se reserva el hueco para que
+   nada se mueva al aparecer. */
+.value-desc {
+  margin-top: 12px;
+  min-height: 2.6em;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--gray-500);
+}
+@media (hover: hover) {
+  .value-desc { opacity: 0; transform: translateY(6px); transition: opacity 0.4s var(--ease), transform 0.4s var(--ease); }
+  .value:hover .value-desc,
+  .value:focus-within .value-desc { opacity: 1; transform: none; }
+}
+
+/* --- Movimiento 1: entrada -------------------------------------------- */
+[data-reveal="on"] .value { opacity: 0; transform: translateY(22px); }
+[data-reveal="on"] .lede-2 { opacity: 0; transform: translateY(12px); }
+
+.values.is-in .value {
+  opacity: 1; transform: none;
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+.values.is-in .value:nth-child(1) { transition-delay: 0.00s; }
+.values.is-in .value:nth-child(2) { transition-delay: 0.07s; }
+.values.is-in .value:nth-child(3) { transition-delay: 0.14s; }
+.values.is-in .value:nth-child(4) { transition-delay: 0.21s; }
+.values.is-in .value:nth-child(5) { transition-delay: 0.28s; }
+
+.lede-2.is-in {
+  opacity: 1; transform: none;
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+}
+
+/* Movimiento 2: al enfocar uno, los demás se apagan. Un solo gesto, y es el
+   que hace que la rejilla se sienta viva.
+   Va DESPUÉS de las reglas de entrada a propósito: comparten especificidad
+   (0,3,0) y, si fuese antes, `.values.is-in .value { opacity: 1 }` lo anularía. */
+@media (hover: hover) {
+  .value-grid:hover .value { opacity: 0.32; }
+  .value-grid .value:hover { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .value, .lede-2, .value-desc, .value-icon, .video img, .video-play span.disc {
+    opacity: 1 !important; transform: none !important; transition: none !important;
+  }
+  .value-grid:hover .value { opacity: 1 !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="mock-note">
+  Maqueta · <b>«Aire»</b> — protagonista: los 5 valores.
+  Pasa el cursor sobre uno de los valores para ver el enfoque. Prueba a <b>1440&nbsp;px</b> y <b>375&nbsp;px</b>.
+</div>
+<div class="mock-spacer"></div>
+
+<section class="about" id="about-overview" aria-labelledby="about-heading">
+  <div class="wrap">
+
+    <div class="intro">
+      <div>
+        <span class="eyebrow">Sobre IDESIE</span>
+
+        <h2 class="headline" id="about-heading">
+          Más que una escuela, una <em>comunidad</em>
+        </h2>
+
+        <p class="lede">
+          IDESIE ha conseguido reunir a prestigiosos profesionales con el objetivo de formar a los alumnos desde
+          el rigor académico, con una perspectiva global y un enfoque eminentemente práctico. Deseamos formar
+          profesionales que sean valorados por su eficacia, capacidad para trabajar en equipo y por el respeto a
+          los valores éticos.
+        </p>
+
+        <p class="lede lede-2" id="lede-2">
+          Nuestro método <strong>Learning by Working</strong> nace de una convicción profunda: el respeto hacia
+          cada alumno como individuo único. Nuestros alumnos reciben una formación innovadora basada en el
+          conocimiento real de las instalaciones que integran una edificación.
+        </p>
+
+        <ul class="chips">
+          <li>Proyectos reales desde día 1</li>
+          <li>Acompañamiento personalizado</li>
+          <li>100% empleabilidad</li>
+        </ul>
+      </div>
+
+      <button class="video" type="button" aria-label="Reproducir vídeo: IDESIE - Visión General de formación BIM">
+        <img src="../public/images/alumnos_clase.jpg" alt="">
+        <span class="video-play">
+          <span class="disc"><svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg></span>
+          Visión general
+        </span>
+      </button>
+    </div>
+
+    <div class="values" id="values">
+      <p class="values-eyebrow" id="values-heading">Lo que nos hace únicos</p>
+
+      <ul class="value-grid" aria-labelledby="values-heading">
+        <li class="value">
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+            </svg>
+          </span>
+          <h3 class="value-title">Ética e Integridad</h3>
+          <p class="value-desc">Transparencia y honestidad</p>
+        </li>
+
+        <li class="value">
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+            </svg>
+          </span>
+          <h3 class="value-title">Práctica Real</h3>
+          <p class="value-desc">Proyectos desde día 1</p>
+        </li>
+
+        <li class="value">
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
+            </svg>
+          </span>
+          <h3 class="value-title">Innovación</h3>
+          <p class="value-desc">Tecnología BIM + IA</p>
+        </li>
+
+        <li class="value">
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect x="2" y="6" width="20" height="14" rx="2"/>
+            </svg>
+          </span>
+          <h3 class="value-title">Visión 360</h3>
+          <p class="value-desc">Técnico + Empresarial</p>
+        </li>
+
+        <li class="value">
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+            </svg>
+          </span>
+          <h3 class="value-title">Desarrollo</h3>
+          <p class="value-desc">Carrera profesional</p>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<div class="mock-spacer" style="height:40vh"></div>
+
+<script>
+try {
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.dataset.reveal = 'on';
+  }
+} catch (e) {}
+
+(function () {
+  if (document.documentElement.dataset.reveal !== 'on') return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('is-in');
+      io.unobserve(e.target);
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.2 });
+  [document.getElementById('values'), document.getElementById('lede-2')].forEach(function (n) { io.observe(n); });
+})();
+</script>
+
+</body>
+</html>

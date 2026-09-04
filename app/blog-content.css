@@ -1,0 +1,125 @@
+/* Estilos para el contenido del blog generado por el editor rico */
+
+.blog-content {
+  line-height: 1.8;
+}
+
+.blog-content h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #1a202c;
+  line-height: 1.2;
+}
+
+.blog-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 1.75rem;
+  margin-bottom: 0.875rem;
+  color: #2d3748;
+  line-height: 1.3;
+}
+
+.blog-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+.blog-content p {
+  margin-bottom: 1.25rem;
+  color: #4a5568;
+}
+
+.blog-content strong {
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.blog-content em {
+  font-style: italic;
+}
+
+.blog-content u {
+  text-decoration: underline;
+}
+
+.blog-content s {
+  text-decoration: line-through;
+}
+
+.blog-content code {
+  background-color: #f7fafc;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.875rem;
+  color: #e53e3e;
+}
+
+.blog-content ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.blog-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.blog-content li {
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+}
+
+.blog-content blockquote {
+  border-left: 4px solid #006cff;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: #718096;
+  background-color: #f7fafc;
+  padding: 1rem;
+  border-radius: 0.25rem;
+}
+
+.blog-content a {
+  color: #006cff;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.blog-content a:hover {
+  color: #005bbd;
+}
+
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.blog-content [style*="text-align: center"] {
+  text-align: center;
+}
+
+.blog-content [style*="text-align: right"] {
+  text-align: right;
+}
+
+.blog-content [style*="text-align: justify"] {
+  text-align: justify;
+}
+
+.blog-content [style*="text-align: left"] {
+  text-align: left;
+}
