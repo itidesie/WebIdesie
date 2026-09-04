@@ -2,3 +2,13 @@ allowBuilds:
   sharp: true
 onlyBuiltDependencies:
   - sharp
+overrides:
+  # 2026-09-05: jsdom >=27.4.0 (y toda la serie 28.x/30.x) tira de
+  # html-encoding-sniffer@^6, que depende de @exodus/bytes (ESM puro) vía
+  # require() síncrono — revienta en el runtime serverless de Vercel con
+  # ERR_REQUIRE_ESM aunque funcione en local. 27.3.0 es la última versión
+  # publicada de jsdom que sigue en la cadena segura (html-encoding-sniffer
+  # ^4, whatwg-encoding, CJS puro). Fijado aquí porque isomorphic-dompurify
+  # declara jsdom con un rango `^` que un `pnpm install` futuro podría subir
+  # sin avisar — no basta con fijar la versión de isomorphic-dompurify sola.
+  jsdom: 27.3.0
