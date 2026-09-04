@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { trackMetaPixelEvent } from "@/components/landing/meta-pixel"
 
 interface InfoRequestModalProps {
   open: boolean
@@ -118,6 +119,10 @@ export function InfoRequestModal({ open, onOpenChange, context }: InfoRequestMod
       })
       if (!res.ok) throw new Error(await res.text())
       setStatus("success")
+      // Conversión real de /landing — la única página con el Meta Pixel
+      // (ver components/landing/meta-pixel.tsx). No lanza nada si el
+      // píxel no cargó (localhost, desarrollo, o sin ID configurado).
+      trackMetaPixelEvent("Lead")
     } catch {
       setStatus("idle")
       setErrors({ email: "Algo ha fallado. Inténtalo de nuevo." })
