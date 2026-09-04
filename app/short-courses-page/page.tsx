@@ -264,7 +264,7 @@ export default function ShortCoursesPage() {
                 className="px-6 py-3 text-sm font-semibold bg-white text-[#006cff] rounded-lg shadow-lg hover:bg-gray-100 transition-all"
                 aria-label="Contactar para informacion sobre cursos BIM"
               >
-                <Link href="/contacto">
+                <Link href="/contact-page">
                   Contacta con nosotros <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </Button>
