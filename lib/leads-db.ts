@@ -23,6 +23,20 @@ export interface Lead {
 }
 
 /**
+ * Lanzado cuando la franja (fecha+hora) elegida acaba de ocuparse — el
+ * índice único parcial `leads_slot_unico` (scripts/033) rechaza el INSERT
+ * con el código Postgres 23505 (unique_violation). `app/api/leads/route.ts`
+ * la distingue de un error genérico para devolver 409 en vez de 500, con un
+ * mensaje que el formulario puede mostrar tal cual.
+ */
+export class SlotUnavailableError extends Error {
+  constructor() {
+    super("Esa franja acaba de reservarse. Elige otra, por favor.")
+    this.name = "SlotUnavailableError"
+  }
+}
+
+/**
  * Inserta un lead y dispara el email de confirmación.
  *
  * Ambos pasos son independientes en modo mock (cada uno respeta su propia
@@ -62,6 +76,9 @@ export async function createLead(data: LeadData): Promise<Lead> {
     .single()
 
   if (error) {
+    if (error.code === "23505") {
+      throw new SlotUnavailableError()
+    }
     console.error("[leads] Error al insertar en Supabase:", error.message)
     throw new Error("No se pudo guardar la solicitud")
   }
