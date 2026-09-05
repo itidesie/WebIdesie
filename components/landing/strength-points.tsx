@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ArrowRight, CalendarClock, GraduationCap, ShieldCheck, Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { useGsapEffect } from "@/hooks/use-gsap-effect"
 
 interface Strength {
@@ -13,6 +14,7 @@ interface Strength {
 
 interface StrengthPointsProps {
   strengths: Strength[]
+  onOpenRequest: (context: string) => void
 }
 
 /**
@@ -53,8 +55,13 @@ const STRENGTH_ICONS = [ShieldCheck, CalendarClock, Users, GraduationCap]
  * dibuja con `scaleY` (mismo recurso que `data-master-accent` de la
  * comparativa de másteres, aquí disparado por CSS al pasar el cursor en vez
  * de por scroll).
+ *
+ * 🎯 2026-09-06 — CTA propio al cierre de la sección (antes esta sección no
+ * tenía ninguno, solo la barra flotante persistente): mismo patrón que ya
+ * usa `TestimonialsSection` ("Quiero mi propia historia") — cada sección
+ * empuja a la conversión, no solo el hero y el cierre.
  */
-export function StrengthPoints({ strengths }: StrengthPointsProps) {
+export function StrengthPoints({ strengths, onOpenRequest }: StrengthPointsProps) {
   const featured = strengths[0]
   const rest = strengths.slice(1)
 
@@ -78,6 +85,17 @@ export function StrengthPoints({ strengths }: StrengthPointsProps) {
       ease: "back.out(1.8)",
       scrollTrigger: { trigger: scope, start: "top 68%", once: true },
     })
+
+    const cta = scope.querySelector("[data-strengths-cta]")
+    if (cta) {
+      gsap.from(cta, {
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        ease: "back.out(1.8)",
+        scrollTrigger: { trigger: cta, start: "top 90%", once: true },
+      })
+    }
   })
 
   return (
@@ -169,6 +187,20 @@ export function StrengthPoints({ strengths }: StrengthPointsProps) {
               </div>
             )
           })}
+        </div>
+
+        <div className="mt-14 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-muted-foreground">¿Alguna duda sobre estos datos? Resuélvela en una llamada.</p>
+          <Button
+            data-strengths-cta
+            size="lg"
+            magnetic
+            onClick={() => onOpenRequest("Argumentos")}
+            className="bg-brand px-8 py-6 text-base text-white hover:bg-brand-strong"
+          >
+            Agendar mi llamada gratuita
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
         </div>
       </div>
     </section>

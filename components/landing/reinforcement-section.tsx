@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ShieldCheck } from "lucide-react"
+import { ArrowRight, ChevronDown, ShieldCheck } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { useGsapEffect } from "@/hooks/use-gsap-effect"
 
 interface Faq {
@@ -11,6 +12,7 @@ interface Faq {
 
 interface ReinforcementSectionProps {
   faqs: Faq[]
+  onOpenRequest: (context: string) => void
 }
 
 /**
@@ -33,8 +35,12 @@ interface ReinforcementSectionProps {
  * explícito (borde de marca + desplazamiento), y el giro del chevron pasa a
  * `--ease-spring` en vez de la transición lineal anterior — mismo criterio
  * de "más carácter, sin inventar mecánica nueva" que el resto del rediseño.
+ *
+ * 🎯 2026-09-06 — CTA propio tras el FAQ (antes esta sección tampoco tenía
+ * ninguno): justo después de resolver las dudas es el momento natural para
+ * ofrecer la llamada, no solo confiar en la barra flotante persistente.
  */
-export function ReinforcementSection({ faqs }: ReinforcementSectionProps) {
+export function ReinforcementSection({ faqs, onOpenRequest }: ReinforcementSectionProps) {
   const [open, setOpen] = useState<number | null>(null)
 
   const scopeRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
@@ -61,6 +67,17 @@ export function ReinforcementSection({ faqs }: ReinforcementSectionProps) {
       yoyo: true,
       repeat: -1,
     })
+
+    const cta = scope.querySelector("[data-faq-cta]")
+    if (cta) {
+      gsap.from(cta, {
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        ease: "back.out(1.8)",
+        scrollTrigger: { trigger: cta, start: "top 90%", once: true },
+      })
+    }
   })
 
   return (
@@ -121,6 +138,20 @@ export function ReinforcementSection({ faqs }: ReinforcementSectionProps) {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-14 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-muted-foreground">¿Te queda alguna duda? Resuélvela en una llamada gratuita.</p>
+          <Button
+            data-faq-cta
+            size="lg"
+            magnetic
+            onClick={() => onOpenRequest("FAQ")}
+            className="bg-brand px-8 py-6 text-base text-white hover:bg-brand-strong"
+          >
+            Agendar mi llamada gratuita
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
         </div>
       </div>
     </section>

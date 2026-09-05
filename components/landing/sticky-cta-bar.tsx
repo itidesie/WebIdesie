@@ -42,7 +42,7 @@ export function StickyCtaBar({ onOpenRequest }: StickyCtaBarProps) {
           onClick={() => onOpenRequest("Barra flotante")}
           className="w-full bg-brand text-white hover:bg-brand-strong sm:w-auto"
         >
-          Solicitar información
+          Agendar mi llamada gratuita
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>

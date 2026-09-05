@@ -114,7 +114,7 @@ export function MastersCtaStrip({ masters, title, intro, ctaLabel, onOpenRequest
                   </p>
                 </div>
                 <div className="mt-8 flex items-center justify-between">
-                  <span className="text-base font-semibold text-white">Solicitar información</span>
+                  <span className="text-base font-semibold text-white">Agendar mi llamada</span>
                   <ArrowRight className="h-4 w-4 text-white/40 transition-transform group-hover:translate-x-1 group-hover:text-brand" />
                 </div>
               </button>

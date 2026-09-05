@@ -20,6 +20,24 @@ interface HeroVideoProps {
  * segundo de fricción antes del CTA cuesta conversión. El vídeo sigue siendo
  * el protagonista del hero (autoplay, sonido opcional), pero ya no condiciona
  * el acceso a nada.
+ *
+ * 🔴 2026-09-06 — `preload="metadata"` añadido tras un diagnóstico real de
+ * Lighthouse móvil contra producción: sin este atributo, el navegador aplica
+ * su valor por defecto (`auto`) y empieza a bufferear agresivamente un
+ * archivo de 170s en bucle — confirmado por red real, ~3,7 MB descargados
+ * solo para el primer render, de los 5,09 MB de peso total de la página
+ * (LCP 4,1s, "malo"). `preload="metadata"` no rompe el autoplay (el
+ * navegador sigue arrancando la reproducción en cuanto puede), solo deja de
+ * indicarle que precargue muy por delante de lo que hace falta para
+ * arrancar.
+ *
+ * 🎨 2026-09-06 — `journey-surface journey-surface-dark` en el marco (antes
+ * `rounded-2xl` genérico) — era la única sección de las 7 sin el motivo de
+ * esquina cortada que ya comparten Testimonios/Argumentos/Comparativa/FAQ/
+ * Cierre. Puro CSS (`border-radius` + un `::before` de borde degradado),
+ * sin JS ni recursos nuevos — no toca en absoluto el `preload="metadata"`
+ * de arriba ni el LCP: el navegador sigue descargando y pintando el vídeo
+ * exactamente igual, solo cambia la forma del marco que lo recorta.
  */
 export function HeroVideo({ src }: HeroVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -42,7 +60,7 @@ export function HeroVideo({ src }: HeroVideoProps) {
   }
 
   return (
-    <div className="hero-video-frame relative overflow-hidden rounded-2xl bg-gray-950 shadow-2xl">
+    <div className="hero-video-frame journey-surface journey-surface-dark relative overflow-hidden bg-gray-950 shadow-2xl">
       <video
         ref={videoRef}
         src={src}
@@ -50,6 +68,7 @@ export function HeroVideo({ src }: HeroVideoProps) {
         muted={isMuted}
         loop
         playsInline
+        preload="metadata"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         className="block h-auto w-full"

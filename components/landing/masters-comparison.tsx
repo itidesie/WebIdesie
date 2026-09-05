@@ -180,7 +180,7 @@ export function MastersComparison({ masters, onOpenRequest }: MastersComparisonP
                     className="relative mt-6 w-full py-5"
                     onClick={() => onOpenRequest(m.shortName)}
                   >
-                    Solicitar información
+                    Agendar mi llamada
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>

@@ -72,14 +72,16 @@ export default function LandingClient() {
         <HeroSection
           eyebrow={hero.eyebrow}
           title={hero.title}
+          urgencyLine={hero.urgencyLine}
+          urgencyBadge={hero.urgencyBadge}
           ctaLabel={hero.ctaLabel}
           onOpenRequest={() => openRequest("Hero")}
         />
 
         <TestimonialsSection testimonials={testimonials} onOpenRequest={openRequest} />
-        <StrengthPoints strengths={strengths} />
+        <StrengthPoints strengths={strengths} onOpenRequest={openRequest} />
         <MastersComparison masters={masters} onOpenRequest={openRequest} />
-        <ReinforcementSection faqs={faqs} />
+        <ReinforcementSection faqs={faqs} onOpenRequest={openRequest} />
         <MastersCtaStrip masters={masters} title={closing.title} intro={closing.intro} ctaLabel={closing.ctaLabel} onOpenRequest={openRequest} />
       </main>
 

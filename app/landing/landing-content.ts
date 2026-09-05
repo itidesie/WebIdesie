@@ -23,7 +23,21 @@
 export const hero = {
   eyebrow: "4 másteres · 1 metodología · IDESIE desde 2012",
   title: "Añade competencias a tu currículum.",
-  ctaLabel: "Solicitar información",
+  // 2026-09-06 — urgencia real, confirmada explícitamente por el cliente:
+  // (1) el máster empieza en octubre, (2) quedan pocas plazas, confirmado
+  // como hecho real por el equipo de admisiones, no una impresión general.
+  // Deliberadamente SIN número exacto de plazas (no lo tenemos) y SIN fecha
+  // límite de matrícula (sigue sin confirmar) — no se inventa ninguno de
+  // los dos. `urgencyBadge` es el golpe visual corto junto al CTA;
+  // `urgencyLine` da el contexto completo bajo el titular, sin repetir el
+  // mismo tono dos veces.
+  urgencyBadge: "Octubre · Plazas limitadas",
+  urgencyLine: "Próxima convocatoria: octubre. Quedan pocas plazas.",
+  // 2026-09-06 — antes "Solicitar información": el formulario que abre este
+  // botón ya no es un formulario genérico, tiene un selector real de fecha y
+  // hora (`TimeSlotPicker`, ver `info-request-modal.tsx`) — el CTA ahora dice
+  // literalmente lo que va a pasar al hacer clic.
+  ctaLabel: "Agendar mi llamada gratuita",
 }
 
 /**
@@ -217,5 +231,6 @@ export const faqs = [
 export const closing = {
   title: "El primer paso es elegir el formato.",
   intro: "Todos llevan a la misma acreditación. La diferencia es cómo encajan en tu vida ahora mismo.",
-  ctaLabel: "Solicitar información",
+  // 2026-09-06 — mismo criterio que `hero.ctaLabel` arriba.
+  ctaLabel: "Agendar mi llamada gratuita",
 }
