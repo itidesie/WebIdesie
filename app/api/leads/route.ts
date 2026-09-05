@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { createLead, type LeadData } from "@/lib/leads-db"
+import { createLead, SlotUnavailableError, type LeadData } from "@/lib/leads-db"
 import { parseJsonBody, stringInput } from "@/lib/api-validation"
-
-const TIME_SLOTS = Array.from({ length: 10 }, (_, i) => `${String(i + 10).padStart(2, "0")}:00`) as [string, ...string[]]
+import { LEAD_TIME_SLOTS } from "@/lib/leads-time-slots"
 
 const leadSchema = z.object({
   firstName: stringInput(z.string().trim().min(1, "Nombre y apellidos son obligatorios")),
@@ -17,7 +16,9 @@ const leadSchema = z.object({
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha no válida")
       .refine((v) => !Number.isNaN(new Date(`${v}T00:00:00`).getTime()), "Fecha no válida"),
   ),
-  sessionTime: stringInput(z.enum(TIME_SLOTS, { message: "Hora no válida — debe ser una franja de 10:00 a 19:00" })),
+  sessionTime: stringInput(
+    z.enum(LEAD_TIME_SLOTS, { message: "Hora no válida — debe ser una franja de 10:00 a 19:00" }),
+  ),
   origen: z.string().trim().optional(),
   masterInteres: z.string().trim().nullable().optional(),
 })
@@ -54,6 +55,9 @@ export async function POST(request: NextRequest) {
     const lead = await createLead(data)
     return NextResponse.json({ ok: true, id: lead.id })
   } catch (error) {
+    if (error instanceof SlotUnavailableError) {
+      return NextResponse.json({ error: "slot_unavailable", message: error.message }, { status: 409 })
+    }
     console.error("[api/leads] Error:", error)
     return NextResponse.json({ error: "No se pudo procesar la solicitud" }, { status: 500 })
   }
