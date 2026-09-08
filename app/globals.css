@@ -1989,7 +1989,14 @@ div.fixed {
 .blueprint-frame [data-corner]::after {
   content: "";
   position: absolute;
-  background: rgb(255 255 255 / 0.55);
+  /* 2026-09-07 — generalizado de un blanco fijo a `currentColor`, para que
+     el mismo marcador sirva sobre fondo oscuro (texto blanco, el uso
+     original de In Company) y sobre fondo claro (texto oscuro, /landing) —
+     el color lo decide el `text-*` del contenedor que envuelve el marcador,
+     nunca hay que duplicar la regla. Retrocompatible: donde ya se usaba
+     dentro de un contexto `text-white`, `currentColor` sigue resolviendo
+     blanco exactamente igual que antes. */
+  background: color-mix(in oklab, currentColor 55%, transparent);
 }
 
 .blueprint-frame [data-corner]::before {
@@ -2014,8 +2021,15 @@ div.fixed {
    filosofía "nunca fondos planos" del repo de skills instalado, aquí se
    mantiene deliberadamente sutil (criterio ya pactado con el cliente:
    "menos elementos, mejor ejecutados"). */
+/* 2026-09-07 — mismo motivo: `currentColor` en vez de blanco fijo, para
+   poder usar la retícula también sobre fondo claro (contexto `text-*`
+   oscuro) además del hero oscuro original de In Company. */
 .blueprint-grid {
-  background-image: radial-gradient(circle, rgb(255 255 255 / 0.14) 1px, transparent 1px);
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklab, currentColor 14%, transparent) 1px,
+    transparent 1px
+  );
   background-size: 28px 28px;
 }
 

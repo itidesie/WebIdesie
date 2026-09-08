@@ -8,11 +8,52 @@
 
 **Stack:** Next.js 16.2 (App Router, Turbopack) · React 19 · TypeScript ·
 Tailwind CSS v4 · shadcn/ui (Radix) · pnpm
-**Última actualización:** 2026-09-05 (49)
+**Última actualización:** 2026-09-07 (50)
 
 ---
 
 ## 0. Avisos que condicionan cualquier trabajo
+
+### 🗑️ `/landing` borrada por completo (2026-09-07) — no busques esta página, ya no existe
+
+Petición explícita del cliente, en la misma sesión que había construido y
+rediseñado `/landing` varias veces seguidas ese mismo día (adopción
+estructural de una referencia de diseño externa, pasada de fidelidad
+visual, y una tercera pasada con contenido adicional confirmado por el
+cliente — todo ese trabajo queda documentado más abajo tal cual se hizo,
+como registro histórico, aunque la página ya no exista).
+
+**Borrado**: `app/landing/` completo (`page.tsx`, `landing-client.tsx`,
+`landing-content.ts`), `components/landing/` completo (14 componentes),
+`lib/landing-modality.ts`, la regla `Disallow: /landing` de
+`app/robots.txt`. La ruta responde `404` — verificado.
+
+**Conservado, movido fuera de `components/landing/`**: `meta-pixel.tsx` →
+`components/meta-pixel.tsx` — decisión explícita del cliente, porque
+`components/admision-modal.tsx` (compartido por las 4 páginas de máster
+reales) importa `trackMetaPixelEvent()` de ahí. Sin `/landing`, ninguna
+página monta hoy `<MetaPixel/>`, así que esas llamadas son un no-op seguro
+— si se retoma tráfico de campañas de pago en otra página, basta con
+montar `<MetaPixel/>` ahí. `NEXT_PUBLIC_META_PIXEL_ID` se deja tal cual en
+`.env.local`/`env.example`, sin tocar.
+
+**No tocado, huérfano pero no borrado** (fuera del alcance de "borra la
+página" — son infraestructura de backend, no la página en sí, y borrar una
+tabla real de Supabase es una decisión distinta y mayor que no se pidió):
+`/api/leads`, `/api/leads/disponibilidad`, `lib/leads-db.ts`,
+`lib/leads-time-slots.ts`, la tabla `leads` en Supabase, y
+`emails/lead-confirmation.tsx`. Sin ningún consumidor real hoy — quedan
+disponibles por si se recupera un flujo de captación de leads en otra
+página, o se borran en una sesión futura si se decide expresamente.
+
+**Recuperación**: los archivos que ya estaban comprometidos en git antes de
+esta sesión (`page.tsx`, y las versiones de `landing-client.tsx`/
+`landing-content.ts`/componentes anteriores a esta sesión) son recuperables
+con `git checkout` sobre su último commit. **Todo el trabajo nuevo hecho
+dentro de esta misma sesión (las 3 pasadas de rediseño) nunca se llegó a
+comprometer** — se ha perdido de forma permanente, incluido el archivo de
+referencia del cliente (`ejemplo de landing sin optimizar.html`, nunca
+subido a git).
 
 ### 🔴 URGENTE — bug real en producción, pendiente de desplegar (encontrado 2026-09-03)
 
@@ -148,7 +189,7 @@ función que atiende la petición.
 | `/mbbe-page` | MBBE — Máster BIM + Building Engineering, 16 meses, especialización MEP. **Usa los 7 movimientos** (ver §5). Contenido en `mbbe-content.ts` |
 | `/embim-page` | EMBIM — Executive Máster BIM, 12 meses, formato ejecutivo de fin de semana. **Usa los 7 movimientos** (ver §5). Contenido en `embim-content.ts` |
 | `/comparativa-masters-page` | Tabla comparativa entre los cuatro másteres |
-| `/landing` | **Landing de venta de los 4 másteres.** Página de conversión independiente de las 4 páginas de programa, **sin el header del sitio** (cero navegación) — ver §5. **Contiene contenido placeholder pendiente de completar** (vídeos, testimonios). **🚫 `noindex`/`nofollow` a propósito, sin ningún enlace interno — solo para tráfico de campañas de pago, ver §2 "SEO técnico"** |
+| ~~`/landing`~~ | 🗑️ **Borrada por completo (2026-09-07)**, a petición explícita del cliente — ver §0. Todo el historial de esta tabla y del resto del documento sobre `/landing` describe una página que ya no existe |
 | `/short-courses-page` | Catálogo de cursos cortos |
 | `/in-company-page` | Formación a medida para empresas. **Rediseño propio "El Plano"** (ver §5) |
 | `/bim-consulting-page` | Servicio de consultoría BIM. **Rediseño propio "El Expediente"** (ver §5) — deliberadamente NO comparte lenguaje visual con las páginas de máster |
@@ -3214,6 +3255,74 @@ insignia "Vídeo pendiente" ausente por completo (0 apariciones), aviso
 (tarjeta 1) y `VID2.mp4` (tarjeta 2) confirmados presentes y sin cambios.
 `next.config.mjs` sin tocar, servidor de desarrollo vivo en el puerto
 3000, nada desplegado.
+
+### 📎 Referencia — los 4 vídeos de /landing en Cloudflare R2 (2026-09-07)
+
+Pointer rápido para no tener que rebuscar en el historial de sesiones
+anteriores cada vez que se necesite una de estas URLs. Las 4 están en el
+mismo bucket público de Cloudflare R2.
+
+⚠️ **Historial del mismo día (2026-09-07), en 3 pasadas de la misma sesión:**
+1ª pasada: adopta la estructura del ejemplo, mantiene los 4 vídeos.
+2ª pasada: fidelidad estructural exacta — retira los 4 vídeos (hero +
+3 testimonios), réplica literal de que la referencia es 100% texto;
+`hero-video.tsx`/`testimonial-video.tsx`/`video-placeholder.tsx` se
+borraron por quedar sin consumidores. 3ª pasada: el cliente pidió
+explícitamente mantener los 3 vídeos de testimonios (mejor prueba social
+que texto) — `testimonial-video.tsx` se reconstruyó y vuelve a estar en
+uso. **El vídeo del hero (`VIDLAN1.mp4`) sigue sin usarse** — esa parte de
+la decisión de la 2ª pasada no cambió.
+
+| Vídeo | Estado actual | URL |
+|---|---|---|
+| `VIDLAN1.mp4` | Sin usar (hero sin vídeo) | `https://pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev/VIDLAN1.mp4` |
+| `RES1.mp4` | **En uso** — Testimonio 1, Carolina Larrahona | `https://pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev/RES1.mp4` |
+| `VID2.mp4` | **En uso** — Testimonio 2, Omar Pérez Ruiz | `https://pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev/VID2.mp4` |
+| `VID3.mp4` | **En uso** — Testimonio 3, Agustina Mingrone | `https://pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev/VID3.mp4` |
+
+Los 4 comparten el mismo host (`pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev`)
+— mismo bucket público de R2, solo cambia el nombre de archivo.
+
+### ⚠️ Contenido nuevo confirmado por el cliente en sesión (2026-09-07) — no verificado de forma independiente
+
+Al pedir replicar el contenido literal de la referencia de diseño externa
+(no solo su estructura), tres afirmaciones concretas del ejemplo no tenían
+ningún equivalente en las 49+ sesiones ya documentadas de este proyecto. Se
+preguntó explícitamente antes de publicar nada — respuestas del cliente,
+textuales, y la decisión tomada en cada caso:
+
+| Punto | Respuesta del cliente | Decisión aplicada |
+|---|---|---|
+| Nombrar al colaborador (persona + L35) | "no pongas ningun nombre no quiero salir pero es todo cierto" | **Sin nombre de persona**, en ningún sitio. Se mantiene "L35" como nombre de empresa (ya usado en `DifferentialSection` como parte del claustro real, aprobado en sesión anterior), sin atribuirle el diseño de ningún módulo concreto |
+| Certificación "AECOMI" | "Sí, es real y vigente" | **Publicada** como 3ª capa de `certificationLayers` (`landing-content.ts`), con nota explícita de que es una confirmación directa del cliente, sin verificación independiente — mismo criterio que otros datos de este proyecto confirmados solo por el cliente (p. ej. `aggregateRating` de Opiniones) |
+| "Contrato laboral garantizado" vs. prácticas | "las dos cosas son reales nueva forma de entender bim y que trabajas" (respuesta que no resuelve cuál de las dos framings es la correcta) | **No se publicó "contrato laboral"** — se usó la versión ya extensamente verificada y documentada en el resto del proyecto: prácticas remuneradas garantizadas al 100% (`fasesInsercion`, las mismas 3 fases reales de `/mbim-page`). Si el cliente confirma en una sesión futura, con más detalle, que existe un contrato laboral real distinto de las prácticas ya documentadas, esto se puede revisar |
+
+**Por qué se preguntó en vez de publicar directamente**: el propio cliente,
+en los 3 turnos anteriores de esta misma sesión, había calificado
+explícitamente este mismo contenido como "inventado"/"ficticio" antes de
+pedir de pronto que se tratara como real — ese giro, sin nueva evidencia
+aportada, junto con que una de las afirmaciones nombra a una persona
+identificable de un tercero (no de IDESIE), justificaba confirmar en vez de
+asumir. La respuesta sobre el nombre de la persona fue clara y se aplicó
+tal cual; las otras dos quedan documentadas aquí con el nivel de confianza
+real que tienen — una confirmación directa del cliente sobre su propia
+institución, no un hecho verificado de forma independiente por fuera de esa
+conversación.
+
+**Contenido real reutilizado para dar cuerpo a "la IA ya está en el
+programa"**, sin inventar nada nuevo: el módulo 08 "Innovation" del MBIM
+(`app/mbim-page/mbim-content.ts`, ya existente desde antes de esta sesión)
+incluye literalmente "IA y machine learning aplicados a procesos BIM" —
+esto por sí solo ya confirmaba, con datos independientes del proyecto, que
+la IA aplicada al BIM no es un concepto nuevo para IDESIE. Se reutiliza ese
+contenido real en `DifferentialSection`, y los 9 módulos reales del MBIM se
+reutilizan en el nuevo acordeón `ProgramModulesSection` — ninguno de los
+dos ECTS/horas/nombres de herramientas específicas de la referencia
+(Adarcus, Pele AI, WiseBIM, Glyph, el calendario del "Innovation Summit",
+el desglose 40/40/20 de evaluación) se publicó, por no tener ningún
+equivalente confirmado ni en el proyecto ni en la conversación con el
+cliente — quedan fuera, no como un olvido, sino como una decisión explícita
+de no inventar el nivel de detalle que el cliente no confirmó.
 
 ### Botón explícito de silenciar/activar sonido en el vídeo del hero (2026-09-04 (35))
 

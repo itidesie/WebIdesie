@@ -8,11 +8,6 @@ Disallow: /checkout/
 Disallow: /_next/
 Disallow: /scripts/
 
-# /landing es solo para tráfico de campañas de pago (Google Ads, Meta Ads) —
-# no debe rastrearse ni indexarse. Ver también el noindex en su metadata y
-# CLAUDE.md § "SEO técnico".
-Disallow: /landing
-
 # Allow important pages for SEO
 Allow: /blog/
 Allow: /mbim-page

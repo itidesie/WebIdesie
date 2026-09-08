@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { trackMetaPixelEvent } from "@/components/landing/meta-pixel"
+import { trackMetaPixelEvent } from "@/components/meta-pixel"
 import {
   BookOpen,
   Calendar,
@@ -80,8 +80,9 @@ function emptyForm(programaPreseleccionado?: ProgramaAdmision): FormState {
 }
 
 /**
- * Formulario de solicitud de admisión — modal compartido entre /landing y
- * las 4 páginas de máster (MBIM, MBBE, EMBIM, Online).
+ * Formulario de solicitud de admisión — modal compartido entre las 4
+ * páginas de máster (MBIM, MBBE, EMBIM, Online). Se usaba también en
+ * `/landing`, borrada por completo el 2026-09-07 a petición del cliente.
  *
  * Reescrito de cero (2026-09-04 (40)) tras la auditoría de formularios:
  * antes reutilizaba la plantilla de `JobApplicationModal` sin más
@@ -166,10 +167,10 @@ export function AdmisionModal({ programaPreseleccionado, origen, children }: Adm
       }
 
       setStatus("success")
-      // Este modal se usa en varias páginas (MBIM/MBBE/EMBIM/Online/landing),
-      // pero el Meta Pixel solo carga en /landing — trackMetaPixelEvent()
-      // no hace nada si window.fbq no existe, así que esta llamada es segura
-      // en el resto de páginas (ver components/landing/meta-pixel.tsx).
+      // Este modal se usa en las 4 páginas de máster (MBIM/MBBE/EMBIM/Online).
+      // Ninguna página monta hoy <MetaPixel/> (vivía solo en /landing, ya
+      // borrada) — trackMetaPixelEvent() no hace nada si window.fbq no
+      // existe, así que esta llamada es un no-op seguro (ver components/meta-pixel.tsx).
       trackMetaPixelEvent("Lead")
     } catch (error) {
       setStatus("idle")

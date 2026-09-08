@@ -6,17 +6,24 @@ import { useEffect, useState } from "react"
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
 
 /**
- * Meta Pixel — solo `/landing`, la única página del sitio pensada para
- * tráfico de campañas de pago (noindex/nofollow, sin header compartido,
- * cero enlaces internos — ver CLAUDE.md). Deliberadamente NO se añade al
- * layout raíz: el resto del sitio es orgánico/SEO, y trackearlo sería un
- * cambio de alcance/privacidad aparte, no decidido aquí.
+ * Meta Pixel — infraestructura compartida, movida aquí el 2026-09-07 desde
+ * `components/landing/meta-pixel.tsx` al borrarse `/landing` por completo
+ * (a petición explícita del cliente). Antes de ese borrado, `/landing` era
+ * la única página del sitio pensada para tráfico de campañas de pago, y era
+ * el único sitio que montaba `<MetaPixel />` (nunca en el layout raíz: el
+ * resto del sitio es orgánico/SEO, y trackearlo sería un cambio de
+ * alcance/privacidad aparte).
+ *
+ * `trackMetaPixelEvent()` se conserva porque `components/admision-modal.tsx`
+ * (compartido entre las 4 páginas de máster) sigue llamándola — es un
+ * no-op seguro mientras no haya ninguna página que monte `<MetaPixel />`
+ * (sin `/landing`, hoy no hay ninguna). Si se retoma tráfico de campañas de
+ * pago en otra página en el futuro, basta con montar `<MetaPixel />` ahí.
  *
  * Doble guardia contra ensuciar los datos reales de Meta con pruebas:
  * 1. `NODE_ENV !== "production"` — nunca en `pnpm dev`.
  * 2. Host `localhost`/`127.0.0.1` — nunca en `next start` local, que sí
- *    corre en modo producción (es como se verificó este mismo fix de
- *    sanitización horas antes). Solo se comprueba en cliente (tras montar),
+ *    corre en modo producción. Solo se comprueba en cliente (tras montar),
  *    nunca en servidor, así que no hay nada que renderizar hasta entonces.
  */
 export function MetaPixel() {
@@ -62,10 +69,10 @@ export function MetaPixel() {
 }
 
 /**
- * Dispara un evento estándar del píxel desde cualquier Client Component
- * (p. ej. al completar `InfoRequestModal`). No lanza si el píxel no llegó
- * a cargar (localhost, desarrollo, o sin `NEXT_PUBLIC_META_PIXEL_ID`) — el
- * propio `window.fbq` no existiría en ese caso.
+ * Dispara un evento estándar del píxel desde cualquier Client Component.
+ * No lanza si el píxel no llegó a cargar (ninguna página monta hoy
+ * `<MetaPixel />`, localhost, desarrollo, o sin `NEXT_PUBLIC_META_PIXEL_ID`)
+ * — el propio `window.fbq` no existiría en ese caso.
  */
 export function trackMetaPixelEvent(eventName: string, params?: Record<string, unknown>) {
   if (typeof window === "undefined") return
