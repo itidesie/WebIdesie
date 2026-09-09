@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google"
+import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono, Bricolage_Grotesque } from "next/font/google"
 import { LandingClient } from "./landing-client"
 
 /**
@@ -39,6 +39,20 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 })
 
+/**
+ * Solo para el <h1> del hero (2026-09-08, rediseño de hero "MBIM 2.0" a dos
+ * columnas) — pedido explícito del cliente de migrar el titular a Bricolage
+ * Grotesque tras confirmárselo. El resto de la página se queda en Space
+ * Grotesk, a propósito: no se sustituye la identidad tipográfica ya
+ * aprobada, solo el titular gana más carácter.
+ */
+const bricolageGrotesque = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-bricolage",
+  display: "swap",
+})
+
 export const metadata: Metadata = {
   title: "MBIM 2.0 — Máster en BIM e Inteligencia Artificial para el sector AEC",
   description:
@@ -55,7 +69,7 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <LandingClient
-      fontVariables={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+      fontVariables={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${bricolageGrotesque.variable}`}
     />
   )
 }
