@@ -15,6 +15,12 @@ interface CatalogDownloadDialogProps {
   catalogName: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Se llama una sola vez, justo después de que `/api/send-catalog`
+   * responda `ok` — nunca en el clic del botón. Lo usa `/landing` para
+   * disparar `trackMetaPixelEvent("Lead")` solo tras confirmación real.
+   */
+  onSuccess?: () => void;
 }
 
 export function CatalogDownloadDialog({
@@ -22,6 +28,7 @@ export function CatalogDownloadDialog({
   catalogName,
   open: controlledOpen,
   onOpenChange,
+  onSuccess,
 }: CatalogDownloadDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -73,6 +80,7 @@ export function CatalogDownloadDialog({
       }
 
       setSuccessMessage('¡Catálogo enviado exitosamente!');
+      onSuccess?.();
       setTimeout(() => {
         setIsOpen(false);
         setSuccessMessage('');

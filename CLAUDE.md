@@ -5265,6 +5265,88 @@ los archivos que toques.
 
 ## 7. Registro de cambios
 
+### 2026-09-10 (51) — /landing "MBIM 2.0": Meta Pixel reconectado + CTAs a un flujo real de agendamiento
+
+⚠️ Este documento tiene secciones (§0, §5) que dicen que `/landing` se
+borró el 2026-09-07. **No es cierto ya**: `/landing` se reconstruyó como
+"MBIM 2.0" (BIM + IA) — `app/landing/page.tsx` + `landing-client.tsx`
+(archivo único, ~4.000 líneas, estilos propios `.mbim2-landing` en un
+`<style>` inline, fuentes Space Grotesk / IBM Plex / Bricolage). Sigue
+`noindex, nofollow` (contenido de ejemplo sin confirmar en testimonios).
+Las secciones antiguas sobre `/landing` describen una versión que ya no
+existe — ignóralas.
+
+**Encargo (2 tareas, aprobado punto por punto antes de implementar):**
+
+**1. Meta Pixel — estaba roto.** `components/meta-pixel.tsx` (init +
+`PageView` + `<noscript>` de respaldo) estaba correcto pero **no se
+montaba en ningún sitio** — en el build vigente el píxel no cargaba en
+`/landing` y `PageView` nunca se disparaba. Los "SubscribeButtonClick" que
+veía el cliente en Events Manager eran eventos automáticos de Meta de un
+deploy anterior. Arreglo:
+- `<MetaPixel />` montado en `landing-client.tsx` (única página que lo
+  monta — el resto del sitio es orgánico). `NEXT_PUBLIC_META_PIXEL_ID`
+  confirmada por el cliente en Vercel (Production). No hay `.env.local`
+  local, así que el píxel no carga en `pnpm dev` — es correcto, además el
+  componente se autoguarda por `NODE_ENV` + host `localhost`.
+- **`Lead`** se dispara **solo tras confirmación de la API**, nunca en el
+  clic: éxito de `AdmisionModal` (ya lo hacía, `res.ok`), éxito de
+  `CatalogDownloadDialog` (nueva prop `onSuccess?` en el componente
+  compartido — no-op en las 3 páginas de máster que también lo usan), y
+  reserva de Calendly.
+- **`Schedule`** (evento estándar de Meta para "reserva de cita") + `Lead`
+  al confirmarse una reserva de Calendly, detectado por `postMessage`
+  (`calendly.event_scheduled`, origin `https://calendly.com`, con guard
+  para no doble-disparar). Para que Calendly emita ese `postMessage` al
+  parent, el `src` del iframe se construye **en cliente** con
+  `?embed_domain=<window.location.host>&embed_type=Inline` — en producción
+  resuelve al dominio real; sin `embed_domain` no hay evento.
+
+**2. CTAs → flujo real de agendamiento.** Antes todos los CTA "Reservar
+plaza / Reservar tu plaza" eran `<a href="#admision">` y `#admision` es
+solo texto (3 tarjetas de pasos) — no capturaban nada. Ahora:
+- **Flujo único: Calendly embebido** (`#agenda`, ya estaba embebido). El
+  formulario propio + `TimeSlotPicker` (backend `/api/leads` +
+  disponibilidad + tabla `leads` sigue intacto) se descartó — sus
+  componentes de UI se borraron con `components/landing/` y reconstruirlos
+  no compensaba.
+- **Copy unificado**: todos los CTA de agenda dicen **"Agendar mi llamada
+  gratuita"** (nav: "Agendar llamada", por espacio). Fuera "Reservar
+  plaza". La duración ("15 min") se quitó del copy — el evento de Calendly
+  es `/idesie-info/30min` pero no se pudo verificar la config real; queda
+  "llamada gratuita · sin compromiso" sin cifra. (Nota: el paso 03 de
+  `STEPS`, "Reserva tu plaza", se dejó — es la etiqueta de un paso real
+  del proceso de admisión, no un CTA.)
+- **CTAs nuevos discretos** (link texto + flecha, clase `.section-cta-row`
+  + `.programa-cta-link`, nunca botón de clímax) al cierre de:
+  metodología/contrato, IA, certificación. El de programa ya existía —
+  solo se unificó el copy.
+- **`AdmisionModal` como vía secundaria** en la sección de admisión
+  (`origen="landing"`, `programaPreseleccionado="MBIM"`), tratamiento
+  ghost, junto al CTA de agenda. Escribe en `solicitudes_admision`, ya
+  dispara `Lead`. Renderiza en portal → usa el tema del sitio, no el de
+  `.mbim2-landing` (aceptable para un modal).
+- **Barra flotante de CTA** (`.landing-sticky-cta`): aparece al pasar el
+  hero (IntersectionObserver), se oculta cuando `#agenda` o el CTA final
+  están en viewport, full-width en móvil, `prefers-reduced-motion` → fade
+  en vez de slide.
+- **"Descargar el programa (PDF)"** (`href="#"`, roto) → `<button>` que
+  abre `CatalogDownloadDialog` controlado (`catalogId="mbim-fulltime"` →
+  `catalogoMBIM.pdf` vía `/api/send-catalog`), con `onSuccess` → `Lead`.
+
+**Verificado:** `npx tsc --noEmit` 0 errores, `npx next build` exit 0
+(`/landing` sigue estática). Verificación headless (puppeteer-core, dev
+server): los 9 CTA de agenda con el copy correcto, el PDF ahora es
+`<button>`, `embed_domain` se construye con el host real, `window.fbq`
+`undefined` en localhost (guard OK), barra sticky oculta arriba →
+visible tras el hero → oculta con `#agenda` en vista, `CatalogDownloadDialog`
+y `AdmisionModal` abren, el CTA del hero hace scroll a `#agenda`. ⚠️ **La
+verificación real del píxel (Pixel Helper + Test Events) es en producción**
+— no carga en localhost. `next.config.mjs` sin tocar, nada desplegado.
+Archivos: `app/landing/landing-client.tsx`,
+`components/catalog-download-dialog.tsx` (prop `onSuccess?`),
+`components/meta-pixel.tsx` (solo docstring).
+
 ### 2026-09-05 (49) — Decisiones del cliente sobre los 3 hallazgos de (48): vercelignore borrado, rotación de contraseña en curso, fila de orders en espera
 Respuesta del cliente a los 3 hallazgos entregados en (48):
 - **`vercelignore` borrado por completo** (decisión del cliente: preferir

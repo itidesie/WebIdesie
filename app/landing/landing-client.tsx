@@ -1,8 +1,12 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import { ArrowRight, CalendarCheck } from "lucide-react"
 import { useGsapEffect } from "@/hooks/use-gsap-effect"
 import { StatCounter } from "@/components/home/stat-counter"
+import { MetaPixel, trackMetaPixelEvent } from "@/components/meta-pixel"
+import { AdmisionModal } from "@/components/admision-modal"
+import { CatalogDownloadDialog } from "@/components/catalog-download-dialog"
 
 /**
  * Réplica fiel de `mbim-landing.html` (mockup "MBIM 2.0" aportado por el
@@ -2372,6 +2376,88 @@ const LANDING_STYLES = `
     transform:none !important;
   }
 }
+
+/* ---------- CTA de cierre de sección (metodología / IA / certificación) ----------
+   Mismo tratamiento discreto que el CTA ya existente bajo el mapa de
+   módulos (.programa-cta-row + .programa-cta-link): un enlace texto +
+   flecha, nunca un botón de "clímax" — la jerarquía la marcan el hero, el
+   CTA final y la barra flotante. 2026-09-10. */
+.mbim2-landing .section-cta-row{
+  margin-top:34px;
+  padding-top:24px;
+  border-top:1px solid rgba(3,7,18,0.09);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  flex-wrap:wrap;
+  text-align:center;
+}
+.mbim2-landing .section-cta-row p{
+  font-size:14px;
+  color:#3A424B;
+}
+
+/* ---------- barra flotante de CTA ----------
+   Aparece cuando el hero ya no está a la vista; se oculta cuando #agenda
+   (o el CTA final) entra en pantalla, para no duplicar el CTA justo al
+   lado del calendario real. Full-width en móvil. */
+.mbim2-landing .landing-sticky-cta{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:60;
+  padding:12px 24px;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  background:rgba(237,239,239,0.95);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  box-shadow:0 -14px 44px -28px rgba(3,7,18,0.4);
+  transform:translateY(120%);
+  transition:transform .35s var(--ease-out-quart, ease);
+  pointer-events:none;
+}
+.mbim2-landing .landing-sticky-cta.is-visible{
+  transform:translateY(0);
+  pointer-events:auto;
+}
+.mbim2-landing .landing-sticky-cta-inner{
+  max-width:var(--maxw);
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.mbim2-landing .landing-sticky-cta-text{
+  font-size:14px;
+  font-weight:600;
+  color:var(--ink);
+}
+.mbim2-landing .landing-sticky-cta .btn{flex-shrink:0;}
+@media(max-width:640px){
+  .mbim2-landing .landing-sticky-cta{padding-left:16px;padding-right:16px;}
+  .mbim2-landing .landing-sticky-cta-inner{gap:0;}
+  .mbim2-landing .landing-sticky-cta-text{display:none;}
+  .mbim2-landing .landing-sticky-cta .btn{width:100%;justify-content:center;}
+}
+@media(prefers-reduced-motion:reduce){
+  .mbim2-landing .landing-sticky-cta{
+    transform:none;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  .mbim2-landing .landing-sticky-cta.is-visible{opacity:1;}
+}
+
+/* Placeholder mientras el <iframe> de Calendly aún no tiene src (se
+   construye en cliente para pasar embed_domain). El contenedor .agenda-embed
+   ya fija la altura, así que no hay salto de layout. */
+.mbim2-landing .agenda-embed-loading{
+  position:absolute;
+  inset:0;
+}
 `
 
 // Rediseño 2026-09-09: el acordeón (intro larga + lista de items por
@@ -3021,9 +3107,92 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     })
   })
 
+  // ---- Calendly embebido: src construido en cliente para pasar
+  // `embed_domain` con el dominio REAL donde se sirve la página (en
+  // producción, `www.idesie.com`; en preview, el dominio de preview) —
+  // sin él Calendly no hace `postMessage` al parent y no podríamos
+  // detectar la reserva. `embed_type=Inline` es lo que Calendly espera
+  // para un embed en línea.
+  const [calendlySrc, setCalendlySrc] = useState<string | null>(null)
+  useEffect(() => {
+    const params = new URLSearchParams({
+      embed_domain: window.location.host,
+      embed_type: "Inline",
+    })
+    setCalendlySrc(`https://calendly.com/idesie-info/30min?${params.toString()}`)
+  }, [])
+
+  // ---- Reserva de llamada confirmada → eventos de Meta. Solo se dispara
+  // cuando Calendly avisa por `postMessage` de que la cita quedó agendada
+  // (`calendly.event_scheduled`), nunca en el clic de un CTA. `Schedule`
+  // (evento estándar de Meta para "reserva de cita") lo distingue del
+  // resto de leads; se envía también `Lead` para que la campaña optimice
+  // sobre un único evento agregado.
+  const scheduleFiredRef = useRef(false)
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.origin !== "https://calendly.com") return
+      const data = e.data
+      if (typeof data !== "object" || data === null) return
+      if ((data as { event?: string }).event !== "calendly.event_scheduled") return
+      if (scheduleFiredRef.current) return
+      scheduleFiredRef.current = true
+      trackMetaPixelEvent("Schedule")
+      trackMetaPixelEvent("Lead")
+    }
+    window.addEventListener("message", onMessage)
+    return () => window.removeEventListener("message", onMessage)
+  }, [])
+
+  // ---- Descarga del PDF de programa → CatalogDownloadDialog controlado.
+  const [catalogOpen, setCatalogOpen] = useState(false)
+
+  // ---- Barra flotante de CTA: aparece cuando el hero ya no está a la
+  // vista y se oculta cuando la sección de agenda (o el CTA final) está en
+  // pantalla, para no duplicar el CTA justo al lado del calendario real.
+  const [showSticky, setShowSticky] = useState(false)
+  useEffect(() => {
+    const hero = heroRef.current
+    if (!hero) return
+    const agenda = agendaRef.current
+    const finalCta = ctaRef.current
+
+    let heroPassed = false
+    const suppressors = new Set<Element>()
+    const sync = () => setShowSticky(heroPassed && suppressors.size === 0)
+
+    const heroObs = new IntersectionObserver(
+      ([entry]) => {
+        heroPassed = !entry.isIntersecting && entry.boundingClientRect.top < 0
+        sync()
+      },
+      { threshold: 0 },
+    )
+    heroObs.observe(hero)
+
+    const suppressObs = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) suppressors.add(entry.target)
+          else suppressors.delete(entry.target)
+        }
+        sync()
+      },
+      { threshold: 0 },
+    )
+    if (agenda) suppressObs.observe(agenda)
+    if (finalCta) suppressObs.observe(finalCta)
+
+    return () => {
+      heroObs.disconnect()
+      suppressObs.disconnect()
+    }
+  }, [heroRef, agendaRef, ctaRef])
+
   return (
     <div className={`mbim2-landing ${fontVariables}`}>
       <style>{LANDING_STYLES}</style>
+      <MetaPixel />
 
       <nav className="nav">
         <div className="nav-inner">
@@ -3039,8 +3208,8 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
             <a href="#testimonios">Testimonios</a>
             <a href="#admision">Admisión</a>
           </div>
-          <a href="#admision" className="btn btn-signal nav-cta" data-magnetic data-magnetic-strength="0.35">
-            Reservar plaza
+          <a href="#agenda" className="btn btn-signal nav-cta" data-magnetic data-magnetic-strength="0.35">
+            Agendar llamada
             <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
           </a>
         </div>
@@ -3116,8 +3285,8 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
 
               <div className="hero-actions hero-fade hero-fade-late">
                 <span className="cta-pulse-wrap">
-                  <a href="#admision" className="btn hero-cta-gradient" data-magnetic>
-                    Reservar mi plaza ahora
+                  <a href="#agenda" className="btn hero-cta-gradient" data-magnetic>
+                    Agendar mi llamada gratuita
                     <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
                   </a>
                 </span>
@@ -3133,7 +3302,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
               </div>
               <a href="#agenda" className="hero-trust-note">
                 <CalendarCheck size={13} aria-hidden="true" />
-                Agenda una sesión informativa gratuita de 15 min · sin compromiso
+                Agenda una llamada gratuita · sin compromiso
               </a>
             </div>
           </div>
@@ -3458,6 +3627,14 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
               </div>
             </div>
           </div>
+
+          <div className="section-cta-row">
+            <p>¿Dudas sobre cómo funciona el contrato laboral? Te lo explicamos sin compromiso.</p>
+            <a href="#agenda" className="programa-cta-link">
+              Agendar mi llamada gratuita
+              <ArrowRight size={14} aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </section>
 
@@ -3510,6 +3687,14 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
                 </ul>
               </div>
             ))}
+          </div>
+
+          <div className="section-cta-row">
+            <p>¿Quieres ver el módulo de IA aplicada al AEC en detalle? Pregúntanos en una llamada.</p>
+            <a href="#agenda" className="programa-cta-link">
+              Agendar mi llamada gratuita
+              <ArrowRight size={14} aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>
@@ -3579,7 +3764,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           <div className="programa-cta-row">
             <p>¿Prefieres que te lo expliquemos en una llamada?</p>
             <a href="#agenda" className="programa-cta-link">
-              Agendar sesión informativa
+              Agendar mi llamada gratuita
               <ArrowRight size={14} aria-hidden="true" />
             </a>
           </div>
@@ -3618,6 +3803,14 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
                 {profile}
               </div>
             ))}
+          </div>
+
+          <div className="section-cta-row">
+            <p>¿Qué credencial pesa más para tu objetivo? Lo vemos en una llamada.</p>
+            <a href="#agenda" className="programa-cta-link">
+              Agendar mi llamada gratuita
+              <ArrowRight size={14} aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>
@@ -3720,9 +3913,20 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
               style={{ ["--btn-fill" as string]: "rgba(0,108,255,0.08)" }}
             >
               <CalendarCheck size={15} aria-hidden="true" />
-              Agendar sesión informativa
+              Agendar mi llamada gratuita
               <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
             </a>
+            <AdmisionModal origen="landing" programaPreseleccionado="MBIM">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sweep"
+                data-magnetic
+                style={{ ["--btn-fill" as string]: "rgba(0,108,255,0.08)" }}
+              >
+                Enviar mi solicitud de admisión
+                <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
+              </button>
+            </AdmisionModal>
           </div>
         </div>
       </section>
@@ -3732,18 +3936,21 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
         <div className="wrap">
           <div className="section-head">
             <div className="editorial-eyebrow">Habla con nosotros</div>
-            <h2>Agenda tu sesión informativa aquí mismo.</h2>
+            <h2>Agenda tu llamada gratuita aquí mismo.</h2>
             <p>
-              15 minutos, sin compromiso. Elige el hueco que mejor te venga — el calendario es real, sin salir de
-              esta página.
+              Sin compromiso. Elige el hueco que mejor te venga — el calendario es real, sin salir de esta página.
             </p>
           </div>
           <div className="agenda-embed">
-            <iframe
-              src="https://calendly.com/idesie-info/30min"
-              title="Agenda una sesión informativa con IDESIE"
-              loading="lazy"
-            />
+            {calendlySrc ? (
+              <iframe
+                src={calendlySrc}
+                title="Agenda una llamada informativa con IDESIE"
+                loading="lazy"
+              />
+            ) : (
+              <div className="agenda-embed-loading" aria-hidden="true" />
+            )}
           </div>
         </div>
       </section>
@@ -3759,20 +3966,21 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           <p>Grupo reducido, contrato desde el primer día y el módulo de IA más avanzado del mercado BIM en español.</p>
           <div className="hero-actions">
             <span className="cta-pulse-wrap">
-              <a href="#admision" className="btn btn-signal" data-magnetic>
-                Reservar tu plaza
+              <a href="#agenda" className="btn btn-signal" data-magnetic>
+                Agendar mi llamada gratuita
                 <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
               </a>
             </span>
-            <a
-              href="#"
+            <button
+              type="button"
+              onClick={() => setCatalogOpen(true)}
               className="btn btn-ghost-light btn-sweep"
               data-magnetic
               style={{ ["--btn-fill" as string]: "rgba(255,255,255,0.16)" }}
             >
               Descargar el programa (PDF)
               <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
-            </a>
+            </button>
           </div>
         </div>
       </section>
@@ -3824,6 +4032,30 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           </div>
         </div>
       </footer>
+
+      {/* ============ BARRA FLOTANTE DE CTA ============ */}
+      <div className={`landing-sticky-cta${showSticky ? " is-visible" : ""}`} aria-hidden={!showSticky}>
+        <div className="landing-sticky-cta-inner">
+          <span className="landing-sticky-cta-text">Grupo de octubre · plazas limitadas</span>
+          <a
+            href="#agenda"
+            className="btn btn-signal"
+            data-magnetic
+            tabIndex={showSticky ? 0 : -1}
+          >
+            Agendar mi llamada gratuita
+            <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+
+      <CatalogDownloadDialog
+        catalogId="mbim-fulltime"
+        catalogName="Máster BIM Full Time"
+        open={catalogOpen}
+        onOpenChange={setCatalogOpen}
+        onSuccess={() => trackMetaPixelEvent("Lead")}
+      />
     </div>
   )
 }

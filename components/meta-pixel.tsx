@@ -7,18 +7,18 @@ const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
 
 /**
  * Meta Pixel — infraestructura compartida, movida aquí el 2026-09-07 desde
- * `components/landing/meta-pixel.tsx` al borrarse `/landing` por completo
- * (a petición explícita del cliente). Antes de ese borrado, `/landing` era
- * la única página del sitio pensada para tráfico de campañas de pago, y era
- * el único sitio que montaba `<MetaPixel />` (nunca en el layout raíz: el
- * resto del sitio es orgánico/SEO, y trackearlo sería un cambio de
- * alcance/privacidad aparte).
+ * `components/landing/meta-pixel.tsx`. `/landing` (reconstruida como
+ * "MBIM 2.0") vuelve a ser la única página del sitio pensada para tráfico
+ * de campañas de pago y **el único sitio que monta `<MetaPixel />`**
+ * (`app/landing/landing-client.tsx`, 2026-09-10) — nunca en el layout
+ * raíz: el resto del sitio es orgánico/SEO, y trackearlo sería un cambio
+ * de alcance/privacidad aparte.
  *
- * `trackMetaPixelEvent()` se conserva porque `components/admision-modal.tsx`
- * (compartido entre las 4 páginas de máster) sigue llamándola — es un
- * no-op seguro mientras no haya ninguna página que monte `<MetaPixel />`
- * (sin `/landing`, hoy no hay ninguna). Si se retoma tráfico de campañas de
- * pago en otra página en el futuro, basta con montar `<MetaPixel />` ahí.
+ * `trackMetaPixelEvent()` la llaman `components/admision-modal.tsx`
+ * (compartido entre las 4 páginas de máster + `/landing`) y
+ * `landing-client.tsx` (reserva de Calendly, descarga de catálogo). Fuera
+ * de `/landing` es un no-op seguro: sin `<MetaPixel />` montado, `window.fbq`
+ * no existe y la función sale sin hacer nada.
  *
  * Doble guardia contra ensuciar los datos reales de Meta con pruebas:
  * 1. `NODE_ENV !== "production"` — nunca en `pnpm dev`.
