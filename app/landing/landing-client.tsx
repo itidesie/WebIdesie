@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight, CalendarCheck } from "lucide-react"
+import { ArrowRight, CalendarCheck, Play, Volume2, VolumeX } from "lucide-react"
 import { useGsapEffect } from "@/hooks/use-gsap-effect"
 import { StatCounter } from "@/components/home/stat-counter"
 import { MetaPixel, trackMetaPixelEvent } from "@/components/meta-pixel"
@@ -2052,29 +2052,103 @@ const LANDING_STYLES = `
 .mbim2-landing .outcome p{font-size:14px;color:#3A424B;margin-top:8px;}
 @media(max-width:760px){.mbim2-landing .outcomes{grid-template-columns:repeat(2,1fr);}}
 
-/* ---------- testimonials ---------- */
+/* ---------- testimonials (2026-09-15, vídeos reales) ----------
+   Una única comilla gigante de fondo ancla la sección entera (recurso ya
+   usado en la landing anterior para esta misma sección) — sustituye a la
+   comilla pequeña por tarjeta que había antes; la cita ya lleva sus propias
+   comillas tipográficas en el texto. */
+#testimonios{position:relative;overflow:hidden;}
+.mbim2-landing #testimonios .wrap{position:relative;z-index:1;}
+.mbim2-landing .testimonials-quote-mark{
+  position:absolute;
+  top:-0.12em;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:var(--font-space-grotesk), sans-serif;
+  font-size:clamp(220px,26vw,340px);
+  font-weight:800;
+  line-height:1;
+  color:var(--blueprint);
+  opacity:0.07;
+  pointer-events:none;
+  user-select:none;
+  z-index:0;
+}
 .mbim2-landing .testimonials{
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:14px;
+  gap:20px;
+  position:relative;
+  z-index:1;
 }
 .mbim2-landing .testimonial{
-  padding:30px 26px;
   display:flex;
   flex-direction:column;
+  padding:0;
 }
-.mbim2-landing .testimonial .quote-mark{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:38px;
-  color:var(--blueprint-light);
-  line-height:1;
-  margin-bottom:14px;
+.mbim2-landing .testimonial-video-frame{
+  position:relative;
+  width:100%;
+  aspect-ratio:9/16;
+  background:var(--ink);
+  overflow:hidden;
+}
+.mbim2-landing .testimonial-video{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.mbim2-landing .testimonial-mute-btn,
+.mbim2-landing .testimonial-play-btn{
+  position:absolute;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  padding:0;
+  cursor:pointer;
+  color:var(--white);
+  background:rgba(3,7,18,0.62);
+  backdrop-filter:blur(6px);
+  border-radius:50%;
+  transition:background .2s var(--ease-out-quart, ease), transform .2s var(--ease-out-quart, ease);
+}
+.mbim2-landing .testimonial-mute-btn{
+  top:12px;
+  right:12px;
+  width:32px;
+  height:32px;
+}
+.mbim2-landing .testimonial-mute-btn:hover{background:rgba(3,7,18,0.84);}
+.mbim2-landing .testimonial-play-btn{
+  inset:0;
+  margin:auto;
+  width:54px;
+  height:54px;
+}
+.mbim2-landing .testimonial-play-btn:hover{background:rgba(3,7,18,0.8);transform:scale(1.06);}
+.mbim2-landing .testimonial-play-btn svg{margin-left:2px;}
+.mbim2-landing .testimonial-body{
+  padding:22px 24px 26px;
+  display:flex;
+  flex-direction:column;
+  flex:1;
+}
+.mbim2-landing .testimonial-n{
+  font-family:var(--font-ibm-plex-mono), monospace;
+  font-size:11.5px;
+  color:var(--blueprint);
+  letter-spacing:0.04em;
+  margin-bottom:12px;
 }
 .mbim2-landing .testimonial .quote{
-  font-size:15px;
+  font-family:var(--font-space-grotesk), sans-serif;
+  font-weight:700;
+  font-size:17px;
+  line-height:1.35;
   color:var(--ink);
   flex:1;
-  line-height:1.55;
 }
 .mbim2-landing .testimonial .who{
   margin-top:22px;
@@ -2084,17 +2158,22 @@ const LANDING_STYLES = `
 .mbim2-landing .testimonial .who .name{
   font-family:var(--font-space-grotesk), sans-serif;
   font-weight:600;
-  font-size:15px;
+  font-size:13.5px;
 }
 .mbim2-landing .testimonial .who .meta{
   font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11.5px;
+  font-size:12.5px;
   color:#5B6470;
   margin-top:4px;
   letter-spacing:0.02em;
 }
 @media(max-width:900px){
   .mbim2-landing .testimonials{grid-template-columns:1fr;}
+  .mbim2-landing .testimonials-quote-mark{font-size:200px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .mbim2-landing .testimonial-mute-btn,
+  .mbim2-landing .testimonial-play-btn{transition:none !important;}
 }
 
 /* ---------- admission ---------- */
@@ -2354,22 +2433,6 @@ const LANDING_STYLES = `
   pointer-events:none;
 }
 
-/* --- Testimonios: comilla gigante decorativa de fondo, pura estética, sin
-   animación — no compite con la comilla pequeña real (.quote-mark). */
-.mbim2-landing .testimonial{position:relative;overflow:hidden;}
-.mbim2-landing .testimonial::before{
-  content:"\\201C";
-  position:absolute;
-  top:-0.3em;right:0.06em;
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:9rem;
-  font-weight:800;
-  color:var(--blueprint);
-  opacity:0.05;
-  line-height:1;
-  pointer-events:none;
-}
-
 @media(prefers-reduced-motion:reduce){
   .mbim2-landing .btn-arrow-icon{
     transition:none !important;
@@ -2583,24 +2646,30 @@ const HERO_WINDOWS = [
   { top: 174, left: 35, delay: "2s" },
 ]
 
+// Los 3 testimonios son reales, de alumnos del Máster BIM Full Time (el
+// programa tal como era antes del enfoque "MBIM 2.0" con IA) — no hablan del
+// módulo de IA porque no lo cursaron, y se muestran tal cual, sin adaptar la
+// cita para que encaje con el nuevo enfoque. Vídeos en Cloudflare R2, mismo
+// bucket que documenta CLAUDE.md ("los 4 vídeos de /landing en Cloudflare
+// R2") — RES1/VID2/VID3, el cuarto (VIDLAN1, hero) sigue sin usarse aquí.
 const TESTIMONIALS = [
   {
-    quote:
-      "Firmé contrato la primera semana. Llegar al máster sabiendo que tenía 16 meses de nómina por delante cambió completamente cómo estudié: sin la presión de buscar trabajo en paralelo.",
-    name: "[Nombre apellido]",
-    meta: "Arquitecta técnica · Promoción [año] · [Empresa partner]",
+    video: "https://pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev/RES1.mp4",
+    quote: "Es la mejor decisión que pude tomar.",
+    name: "Carolina Larrahona",
+    meta: "Máster BIM Full Time",
   },
   {
-    quote:
-      "Antes usaba ChatGPT para redactar memorias. Ahora tengo un agente que revisa clashes en Revit antes de que yo abra el modelo. El módulo de IA no se parece a nada que hubiera visto en otro máster BIM.",
-    name: "[Nombre apellido]",
-    meta: "Ingeniero de caminos · Promoción [año] · [Empresa partner]",
+    video: "https://pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev/VID2.mp4",
+    quote: "Lo que más destaco del máster es la metodología learning by working.",
+    name: "Omar Pérez Ruiz",
+    meta: "Máster BIM Full Time",
   },
   {
-    quote:
-      "La certificación AECOMI pesó en la entrevista más que el propio título. El responsable técnico sabía exactamente qué significaba, porque el perfil está definido por competencias, no por un temario genérico.",
-    name: "[Nombre apellido]",
-    meta: "BIM Manager · Promoción [año] · [Empresa partner]",
+    video: "https://pub-5178d59aea414c55b9ff83a226ef28f6.r2.dev/VID3.mp4",
+    quote: "El BIM me abrió muchísimas puertas.",
+    name: "Agustina Mingrone",
+    meta: "Máster BIM Full Time",
   },
 ]
 
@@ -3041,20 +3110,18 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     })
   })
 
-  // Testimonios: entrada con rotación alterna, mismo lenguaje que ya usó
-  // esta misma sección en la versión anterior de /landing.
+  // Testimonios: entrada editorial (fade + translateY, delays escalonados)
+  // — mismo patrón que .outcome, sin la rotación/escala de la versión
+  // anterior de la sección (que ahora aloja vídeos reales, más peso visual
+  // que una tarjeta de texto suelta).
   const testimoniosRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
-    scope.querySelectorAll(".testimonial").forEach((card, i) => {
-      gsap.from(card, {
-        opacity: 0,
-        y: 24,
-        scale: 0.96,
-        rotate: i % 2 === 0 ? -3 : 3,
-        duration: 0.6,
-        ease: "back.out(1.6)",
-        clearProps: "transform",
-        scrollTrigger: { trigger: card, start: "top 85%", once: true },
-      })
+    gsap.from(scope.querySelectorAll(".testimonial"), {
+      opacity: 0,
+      y: 24,
+      stagger: 0.14,
+      duration: 0.6,
+      clearProps: "transform",
+      scrollTrigger: { trigger: scope.querySelector(".testimonials"), start: "top 82%", once: true },
     })
   })
 
@@ -3146,6 +3213,32 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
 
   // ---- Descarga del PDF de programa → CatalogDownloadDialog controlado.
   const [catalogOpen, setCatalogOpen] = useState(false)
+
+  // ---- Testimonios: 3 vídeos reales, sin autoplay ni controles nativos —
+  // controles propios (play centrado + mute en la esquina) para que el
+  // estado mostrado (icono, aria-label) nunca se desincronice de lo que
+  // hace el propio <video> (el bug real de la landing anterior, 2026-09-04
+  // (34), fue justo un control nativo que dejaba de responder por el
+  // overflow:hidden de un ancestro — aquí no hay control nativo que pueda
+  // sufrir ese problema). Arranca sin silenciar: son testimonios con voz
+  // real, y solo empiezan a sonar cuando el usuario pulsa play (un gesto
+  // suyo), así que no hace falta el `muted` inicial que sí necesita un
+  // autoplay.
+  const testimonialVideoRefs = useRef<Array<HTMLVideoElement | null>>([])
+  const [testimonialState, setTestimonialState] = useState(() => TESTIMONIALS.map(() => ({ playing: false, muted: false })))
+
+  const toggleTestimonialPlay = (i: number) => {
+    const video = testimonialVideoRefs.current[i]
+    if (!video) return
+    if (video.paused) video.play()
+    else video.pause()
+  }
+  const toggleTestimonialMute = (i: number) => {
+    setTestimonialState((prev) => prev.map((s, idx) => (idx === i ? { ...s, muted: !s.muted } : s)))
+  }
+  const setTestimonialPlaying = (i: number, playing: boolean) => {
+    setTestimonialState((prev) => prev.map((s, idx) => (idx === i ? { ...s, playing } : s)))
+  }
 
   // ---- Barra flotante de CTA: aparece cuando el hero ya no está a la
   // vista y se oculta cuando la sección de agenda (o el CTA final) está en
@@ -3858,26 +3951,87 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
         </div>
       </section>
 
-      {/* ============ TESTIMONIOS ============ */}
-      {/* NOTA IDESIE: textos de ejemplo — sustituir por citas reales de antiguos alumnos, con su consentimiento, antes de publicar. */}
+      {/* ============ TESTIMONIOS — 3 vídeos reales, Máster BIM Full Time ============ */}
       <section id="testimonios" ref={testimoniosRef}>
+        <span className="testimonials-quote-mark" aria-hidden="true">&ldquo;</span>
         <div className="wrap">
-          <div className="section-head">
-            <div className="editorial-eyebrow">Lo que dicen quienes ya lo han hecho</div>
-            <h2>No te lo contamos solo nosotros.</h2>
-            <p>Testimonios de ejemplo — a sustituir por citas reales de antiguos alumnos antes de publicar la página.</p>
-          </div>
+          <div className="programa-eyebrow">Lo que dicen quienes ya lo han hecho</div>
+          <h2 className="programa-title">
+            No te lo contamos <span className="programa-title-accent">solo nosotros.</span>
+          </h2>
+          <p className="programa-lede">
+            Antiguos alumnos del Máster BIM Full Time, en sus propias palabras — sin guion.
+          </p>
+
           <div className="testimonials">
-            {TESTIMONIALS.map((t) => (
-              <div className="testimonial glass-card" key={t.name + t.meta}>
-                <div className="quote-mark">&ldquo;</div>
-                <p className="quote">{t.quote}</p>
-                <div className="who">
-                  <div className="name">{t.name}</div>
-                  <div className="meta">{t.meta}</div>
+            {TESTIMONIALS.map((t, i) => (
+              <div className="testimonial glass-card" key={t.name}>
+                <div className="testimonial-video-frame">
+                  <video
+                    ref={(el) => {
+                      testimonialVideoRefs.current[i] = el
+                    }}
+                    src={t.video}
+                    preload="metadata"
+                    playsInline
+                    muted={testimonialState[i].muted}
+                    aria-label={`Vídeo testimonio de ${t.name}: «${t.quote}»`}
+                    className="testimonial-video"
+                    onClick={() => toggleTestimonialPlay(i)}
+                    onPlay={() => setTestimonialPlaying(i, true)}
+                    onPause={() => setTestimonialPlaying(i, false)}
+                    onEnded={() => setTestimonialPlaying(i, false)}
+                  >
+                    Tu navegador no admite la reproducción de este vídeo.
+                  </video>
+                  {!testimonialState[i].playing && (
+                    <button
+                      type="button"
+                      onClick={() => toggleTestimonialPlay(i)}
+                      className="testimonial-play-btn"
+                      aria-label={`Reproducir vídeo de ${t.name}`}
+                    >
+                      <Play size={22} aria-hidden="true" fill="currentColor" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleTestimonialMute(i)
+                    }}
+                    className="testimonial-mute-btn"
+                    aria-label={testimonialState[i].muted ? "Activar sonido" : "Silenciar vídeo"}
+                  >
+                    {testimonialState[i].muted ? (
+                      <VolumeX size={15} aria-hidden="true" />
+                    ) : (
+                      <Volume2 size={15} aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+                <div className="testimonial-body">
+                  <span className="testimonial-n" aria-hidden="true">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <p className="quote">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div className="who">
+                    <div className="name">{t.name}</div>
+                    <div className="meta">{t.meta}</div>
+                  </div>
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="section-cta-row">
+            <p>¿Quieres hablar con alguien del equipo antes de decidir?</p>
+            <a href="#agenda" className="programa-cta-link">
+              Agendar mi llamada gratuita
+              <ArrowRight size={14} aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>
