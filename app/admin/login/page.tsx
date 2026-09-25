@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Lock } from "lucide-react"
 
 export default function AdminLogin() {
+  const [username, setUsername] = useState("")
   const [secretKey, setSecretKey] = useState("")
   const [showKey, setShowKey] = useState(false)
   const [error, setError] = useState("")
@@ -29,11 +30,13 @@ export default function AdminLogin() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ secretKey }),
+        body: JSON.stringify({ secretKey, username: username.trim() || undefined }),
       })
 
       if (response.ok) {
         router.push("/admin/dashboard")
+      } else if (response.status === 429) {
+        setError("Demasiados intentos fallidos. Espera unos minutos antes de volver a intentarlo.")
       } else {
         setError("Clave secreta incorrecta")
       }
@@ -57,6 +60,18 @@ export default function AdminLogin() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuario (opcional)</Label>
+              <Input
+                id="username"
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="secretKey">Clave Secreta</Label>
               <div className="relative">

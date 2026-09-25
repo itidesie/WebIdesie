@@ -35,7 +35,12 @@ export interface RateLimitResult {
 
 /** Límites en un solo sitio, para que sean fáciles de revisar y ajustar. */
 export const RATE_LIMITS = {
-  adminLogin: { bucket: "admin-login-ip", max: 5, windowSeconds: 15 * 60 },
+  // Login de admin. Dos contadores complementarios (ver /api/admin/auth):
+  //  · IP + username: 5 fallos / 15 min → bloquea el intento de adivinar UNA cuenta.
+  //  · solo IP: 15 fallos / 15 min → impide esquivar el anterior cambiando de
+  //    username en cada intento (cada username nuevo tendría su propio contador).
+  adminLoginUser: { bucket: "admin-login-ip-user", max: 5, windowSeconds: 15 * 60 },
+  adminLoginIp: { bucket: "admin-login-ip", max: 15, windowSeconds: 15 * 60 },
   contactIp: { bucket: "contact-ip", max: 5, windowSeconds: 60 * 60 },
   admisionIp: { bucket: "admision-ip", max: 5, windowSeconds: 60 * 60 },
   candidaturaIp: { bucket: "candidatura-ip", max: 5, windowSeconds: 60 * 60 },
@@ -108,6 +113,29 @@ export async function checkRateLimit(rule: RateLimitRule, identifier: string): P
       error instanceof Error ? error.message : error,
     )
     return memoryHit(rule, keyHash)
+  }
+}
+
+/**
+ * Reinicia el contador de `identifier` bajo `rule` (todas sus ventanas). Se usa
+ * tras un login correcto: los intentos fallidos previos dejan de contar.
+ * Un fallo aquí nunca debe romper el login, así que solo se registra.
+ */
+export async function resetRateLimit(rule: RateLimitRule, identifier: string): Promise<void> {
+  const keyHash = hashKey(rule.bucket, identifier)
+  memoryCounters.delete(`${rule.bucket}|${keyHash}`)
+
+  if (isMock("SUPABASE_SERVICE_ROLE_KEY")) return
+
+  try {
+    const supabase = getSupabaseServerClient()
+    const { error } = await supabase.from("rate_limits").delete().eq("bucket", rule.bucket).eq("key_hash", keyHash)
+    if (error) throw error
+  } catch (error) {
+    console.error(
+      `[rate-limit] No se pudo reiniciar el contador de "${rule.bucket}":`,
+      error instanceof Error ? error.message : error,
+    )
   }
 }
 

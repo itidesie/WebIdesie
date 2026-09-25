@@ -7,7 +7,14 @@ import { verifyAdminSecret } from "@/lib/admin-secret"
 import { createAdminSession, revokeAdminSession } from "@/lib/admin-session"
 import { parseJsonBody, stringInput } from "@/lib/api-validation"
 import { isSameOriginRequest } from "@/lib/verify-origin"
-import { checkRateLimit, getClientIp, padToMinDuration, RATE_LIMITS, tooManyRequestsResponse } from "@/lib/rate-limit"
+import {
+  checkRateLimit,
+  getClientIp,
+  padToMinDuration,
+  RATE_LIMITS,
+  resetRateLimit,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit"
 
 /**
  * Las respuestas FALLIDAS del login tardan siempre al menos esto: iguala el
@@ -23,15 +30,17 @@ async function failWithDelay(startedAt: number, body: { error: string }, status:
 
 const loginSchema = z.object({
   secretKey: stringInput(z.string().min(1, "Clave secreta requerida")),
+  // Opcional: el formulario clásico solo pide la clave. Si viene, la comparación
+  // se limita a esa cuenta y el límite de intentos es por IP + username.
+  username: z.string().trim().max(64).optional(),
 })
 
 /**
  * Login de /admin. El formulario solo pide una "clave secreta" (sin
  * usuario), así que `verifyAdminSecret` compara contra el `password_hash`
- * de cada fila de `admin_users` en vez de buscar por username. La
- * verificación (bcrypt + migración perezosa de contraseñas heredadas en
- * claro) vive en `lib/admin-secret.ts`, compartida con `app/blog/actions.ts`
- * y cualquier Server Action futura — ver CLAUDE.md §4.
+ * de cada fila de `admin_users` salvo que se envíe un `username` opcional. La
+ * verificación (solo bcrypt) vive en `lib/admin-secret.ts`, compartida con
+ * `app/blog/actions.ts` y cualquier Server Action futura — ver CLAUDE.md §4.
  */
 export async function POST(request: NextRequest) {
   const startedAt = Date.now()
@@ -44,12 +53,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Origen de la petición no válido" }, { status: 403 })
     }
 
-    // 🔒 Rate limiting por IP: 5 intentos cada 15 min (cada POST cuenta, sea
-    // correcto o no). Antes de tocar bcrypt ni la base de datos.
+    // 🔒 Bloqueo por fuerza bruta. Solo cuentan los intentos FALLIDOS: cada
+    // petición consume un intento al entrar (así una ráfaga de peticiones en
+    // paralelo no puede colarse antes de que se registre el primer fallo) y un
+    // login CORRECTO borra los contadores (ver más abajo), de modo que el efecto
+    // es el mismo que contar solo fallos.
+    //   1) por IP: 15 / 15 min — antes de leer el cuerpo.
+    //   2) por IP + username: 5 / 15 min — tras leerlo.
+    // Dos contadores porque, con solo el combinado, cambiar de username en cada
+    // intento daría 5 intentos nuevos por nombre.
     const ip = getClientIp(request.headers)
-    const limit = await checkRateLimit(RATE_LIMITS.adminLogin, ip)
-    if (!limit.allowed) {
-      return tooManyRequestsResponse(limit.retryAfterSeconds)
+    const ipLimit = await checkRateLimit(RATE_LIMITS.adminLoginIp, ip)
+    if (!ipLimit.allowed) {
+      return tooManyRequestsResponse(ipLimit.retryAfterSeconds)
     }
 
     // Sin base de datos no hay forma de validar la clave. Denegamos en vez de
@@ -65,12 +81,24 @@ export async function POST(request: NextRequest) {
     const parsed = await parseJsonBody(request, loginSchema)
     if (!parsed.success) return parsed.response
     const { secretKey } = parsed.data
+    const username = parsed.data.username || undefined
 
-    const matchedId = await verifyAdminSecret(secretKey)
+    // Sin username (login clásico) la clave del contador es solo la IP + un marcador.
+    const userKey = `${ip}|${username ? username.toLowerCase() : "-"}`
+    const userLimit = await checkRateLimit(RATE_LIMITS.adminLoginUser, userKey)
+    if (!userLimit.allowed) {
+      return tooManyRequestsResponse(userLimit.retryAfterSeconds)
+    }
+
+    const matchedId = await verifyAdminSecret(secretKey, username)
 
     if (matchedId === null) {
+      // Fallo: el intento ya está contado; retardo mínimo constante.
       return failWithDelay(startedAt, { error: "Invalid secret key" }, 401)
     }
+
+    // Login correcto: los fallos previos de esta IP dejan de contar.
+    await Promise.all([resetRateLimit(RATE_LIMITS.adminLoginUser, userKey), resetRateLimit(RATE_LIMITS.adminLoginIp, ip)])
 
     const supabase = getSupabaseServerClient()
     await supabase.from("admin_users").update({ last_login: new Date().toISOString() }).eq("id", matchedId)
