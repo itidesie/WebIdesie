@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { createCandidatura } from "@/lib/candidaturas-db"
 import { parseJsonBody, stringInput } from "@/lib/api-validation"
+import { checkRateLimit, getClientIp, RATE_LIMITS, tooManyRequestsResponse } from "@/lib/rate-limit"
 
 const REQUIRED_MSG = "Todos los campos obligatorios deben ser completados"
 
@@ -29,6 +30,10 @@ const candidaturaSchema = z.object({
  * mecanismo más adelante, nunca poblado hoy.
  */
 export async function POST(request: NextRequest) {
+  // 🔒 Rate limiting por IP + honeypot (este último dentro de parseJsonBody).
+  const limit = await checkRateLimit(RATE_LIMITS.candidaturaIp, getClientIp(request.headers))
+  if (!limit.allowed) return tooManyRequestsResponse(limit.retryAfterSeconds)
+
   const parsed = await parseJsonBody(request, candidaturaSchema)
   if (!parsed.success) return parsed.response
   const { ofertaId, ofertaPuesto, nombre, email, telefono, mensaje, cvUrl } = parsed.data

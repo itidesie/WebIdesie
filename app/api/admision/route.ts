@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { createSolicitudAdmision } from "@/lib/admision-db"
 import { parseJsonBody, stringInput } from "@/lib/api-validation"
+import { checkRateLimit, getClientIp, RATE_LIMITS, tooManyRequestsResponse } from "@/lib/rate-limit"
 
 const PROGRAMAS = ["MBIM", "MBBE", "EMBIM", "Online"] as const
 const ORIGENES = ["landing", "mbim", "mbbe", "embim", "online"] as const
@@ -42,6 +43,10 @@ const admisionSchema = z.object({
  * "verdadero" (un `1` o `"true"` como string ya no colarían).
  */
 export async function POST(request: NextRequest) {
+  // 🔒 Rate limiting por IP + honeypot (este último dentro de parseJsonBody).
+  const limit = await checkRateLimit(RATE_LIMITS.admisionIp, getClientIp(request.headers))
+  if (!limit.allowed) return tooManyRequestsResponse(limit.retryAfterSeconds)
+
   const parsed = await parseJsonBody(request, admisionSchema)
   if (!parsed.success) return parsed.response
   const {

@@ -12,6 +12,8 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card"
 import { AlertCircle, ArrowRight, CalendarCheck, CheckCircle2, Loader2, MessageSquare } from "lucide-react"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { HoneypotField } from "@/components/honeypot-field"
+import { HONEYPOT_FIELD } from "@/lib/honeypot"
 
 /**
  * Motivos de contacto que pueden llegar por querystring desde las paginas de
@@ -82,6 +84,7 @@ export default function ContactClientPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: formData.get("name"),
+          [HONEYPOT_FIELD]: formData.get(HONEYPOT_FIELD),
           email: formData.get("email"),
           asunto: subject || undefined,
           mensaje: formData.get("message"),
@@ -149,6 +152,7 @@ export default function ContactClientPage() {
               Completa el formulario y nos pondremos en contacto contigo a la brevedad.
             </CardDescription>
             <form onSubmit={handleSubmit} className="space-y-6">
+              <HoneypotField />
               {submitStatus && (
                 <div
                   className={`flex items-start gap-3 rounded-lg p-4 ${

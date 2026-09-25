@@ -3,6 +3,8 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { MOCK_PRODUCTS } from "@/lib/mock-data"
+import { headers } from "next/headers"
+import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit"
 
 /**
  * El importe final SIEMPRE se recalcula aquí, en servidor, a partir de
@@ -135,7 +137,7 @@ const EMPTY_TOTAL: Omit<VerifiedTotal, "error"> = {
  * de "aplicar cupón" como el de "verificar antes de pagar" llaman a esta
  * misma función, nunca confían en un total calculado antes en el cliente.
  */
-export async function calculateVerifiedTotal(
+async function computeVerifiedTotal(
   cartItems: CartItemInput[],
   couponCode?: string,
 ): Promise<VerifiedTotal> {
@@ -198,6 +200,27 @@ export async function calculateVerifiedTotal(
   }
 }
 
+/**
+ * Punto de entrada público del cálculo. 🔒 Cuando la petición trae un código de
+ * cupón se limita por IP (anti-enumeración de códigos): cada verificación con
+ * cupón es una prueba de un código. Las verificaciones SIN cupón (las que
+ * dispara el carrito al cambiar) no cuentan. `createOrderAndGetPaymentUrl` usa
+ * `computeVerifiedTotal` directamente y aplica su propio límite, para no
+ * contar dos veces la misma acción.
+ */
+export async function calculateVerifiedTotal(
+  cartItems: CartItemInput[],
+  couponCode?: string,
+): Promise<VerifiedTotal> {
+  if (couponCode?.trim()) {
+    const limit = await checkRateLimit(RATE_LIMITS.checkoutCouponIp, getClientIp(await headers()))
+    if (!limit.allowed) {
+      return { ...EMPTY_TOTAL, error: "Demasiados intentos con códigos de descuento. Espera unos minutos e inténtalo de nuevo." }
+    }
+  }
+  return computeVerifiedTotal(cartItems, couponCode)
+}
+
 export interface CreateOrderResult {
   success: boolean
   paymentUrl?: string
@@ -225,7 +248,14 @@ export async function createOrderAndGetPaymentUrl(input: {
     return { success: false, error: "Revisa los datos del comprador" }
   }
 
-  const verified = await calculateVerifiedTotal(input.cartItems, input.couponCode)
+  // 🔒 Cada llamada exitosa crea filas en `orders`/`order_items` y consume un
+  // uso de cupón: limitado por IP para que no se pueda llenar la tabla.
+  const orderLimit = await checkRateLimit(RATE_LIMITS.checkoutOrderIp, getClientIp(await headers()))
+  if (!orderLimit.allowed) {
+    return { success: false, error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." }
+  }
+
+  const verified = await computeVerifiedTotal(input.cartItems, input.couponCode)
   if (!verified.success) {
     return { success: false, error: verified.error || "No se pudo verificar el pedido" }
   }

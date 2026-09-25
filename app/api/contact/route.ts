@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { createMensajeContacto } from "@/lib/contact-db"
 import { parseJsonBody, stringInput } from "@/lib/api-validation"
+import { checkRateLimit, getClientIp, RATE_LIMITS, tooManyRequestsResponse } from "@/lib/rate-limit"
 
 const contactSchema = z.object({
   nombre: stringInput(z.string().trim().min(1, "Nombre, email y mensaje son obligatorios")),
@@ -21,6 +22,10 @@ const contactSchema = z.object({
  * mensajes de error que la versión anterior.
  */
 export async function POST(request: NextRequest) {
+  // 🔒 Rate limiting por IP + honeypot (este último dentro de parseJsonBody).
+  const limit = await checkRateLimit(RATE_LIMITS.contactIp, getClientIp(request.headers))
+  if (!limit.allowed) return tooManyRequestsResponse(limit.retryAfterSeconds)
+
   const parsed = await parseJsonBody(request, contactSchema)
   if (!parsed.success) return parsed.response
   const { nombre, email, asunto, mensaje, motivo, programa } = parsed.data

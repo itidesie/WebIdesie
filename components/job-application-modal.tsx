@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, User, MessageSquare, Loader2, CheckCircle } from "lucide-react"
+import { HoneypotField } from "@/components/honeypot-field"
+import { HONEYPOT_FIELD } from "@/lib/honeypot"
 
 interface JobApplicationModalProps {
   jobTitle: string
@@ -37,6 +39,8 @@ export default function JobApplicationModal({ jobTitle, jobId, children }: JobAp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Se lee ahora, de forma síncrona: `currentTarget` deja de ser válido tras el primer `await`.
+    const honeypot = new FormData(e.currentTarget as HTMLFormElement).get(HONEYPOT_FIELD)
     setIsSubmitting(true)
     setSubmitError("")
 
@@ -53,6 +57,7 @@ export default function JobApplicationModal({ jobTitle, jobId, children }: JobAp
           email: formData.email,
           telefono: formData.phone,
           mensaje: formData.message,
+          [HONEYPOT_FIELD]: honeypot,
         }),
       })
 
@@ -96,6 +101,7 @@ export default function JobApplicationModal({ jobTitle, jobId, children }: JobAp
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5 py-4">
+            <HoneypotField />
             {/* Job Title Display */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm font-medium text-gray-700 mb-1">Oferta de interés:</p>

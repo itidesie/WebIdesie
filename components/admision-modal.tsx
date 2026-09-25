@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { trackMetaPixelEvent } from "@/components/meta-pixel"
+import { HoneypotField } from "@/components/honeypot-field"
+import { HONEYPOT_FIELD } from "@/lib/honeypot"
 import {
   BookOpen,
   Calendar,
@@ -139,6 +141,8 @@ export function AdmisionModal({ programaPreseleccionado, origen, children }: Adm
     e.preventDefault()
     setSubmitError("")
     if (!validate()) return
+    // Se lee ahora, de forma síncrona: `currentTarget` deja de ser válido tras el primer `await`.
+    const honeypot = new FormData(e.currentTarget as HTMLFormElement).get(HONEYPOT_FIELD)
 
     setStatus("submitting")
     try {
@@ -158,6 +162,7 @@ export function AdmisionModal({ programaPreseleccionado, origen, children }: Adm
           origen,
           mensaje: form.mensaje || undefined,
           rgpdAceptado: form.rgpdAceptado,
+          [HONEYPOT_FIELD]: honeypot,
         }),
       })
 
@@ -220,6 +225,7 @@ export function AdmisionModal({ programaPreseleccionado, origen, children }: Adm
             </DialogHeader>
 
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              <HoneypotField />
               {submitError && (
                 <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
                   {submitError}
