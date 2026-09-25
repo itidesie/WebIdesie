@@ -1,6 +1,7 @@
 import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
+import { getRequiredSecret } from "@/lib/env"
 
 /**
  * Sesiones reales de administrador — sustituye la cookie de valor fijo
@@ -18,15 +19,17 @@ import { isMock, logMock } from "@/lib/mock-mode"
  * mismo código sirve en los dos sitios sin tener que forzar el middleware
  * a runtime `nodejs`.
  *
- * La clave de firma se deriva de `SUPABASE_SERVICE_ROLE_KEY` (ya
- * obligatoria en producción) en vez de introducir una variable de entorno
- * nueva que pudiera faltar en un despliegue real.
+ * 🔒 La clave de firma es `ADMIN_SESSION_SECRET`, propia y sin relación con
+ * Supabase (antes se derivaba de `SUPABASE_SERVICE_ROLE_KEY`, de modo que una
+ * fuga de esa clave permitía falsificar cookies de admin y rotarla cerraba
+ * todas las sesiones). Sin fallback: si falta, `getRequiredSecret` lanza un
+ * error (ver `lib/env.ts`).
  */
 
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000 // 24h, mismo que la cookie anterior
 
 function getSigningKeyMaterial(): string {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY || "dev-mock-admin-session-signing-key"
+  return getRequiredSecret("ADMIN_SESSION_SECRET")
 }
 
 let cachedKey: CryptoKey | null = null

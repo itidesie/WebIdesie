@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto"
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock } from "@/lib/mock-mode"
+import { getRequiredSecret } from "@/lib/env"
 
 /**
  * 🔒 Rate limiting reutilizable para endpoints públicos, Server Actions y el
@@ -15,8 +16,9 @@ import { isMock } from "@/lib/mock-mode"
  * (En memoria un atacante repartido entre instancias tiene más margen; por eso
  * hay que aplicar la migración.)
  *
- * La clave (IP, email) NO se guarda en claro: se envía un HMAC-SHA256 derivado
- * de SUPABASE_SERVICE_ROLE_KEY, así que no hace falta ninguna variable nueva.
+ * La clave (IP, email) NO se guarda en claro: se envía un HMAC-SHA256 con
+ * `RATE_LIMIT_SECRET` (propio, independiente de Supabase; sin fallback — si
+ * falta, `getRequiredSecret` lanza un error, ver `lib/env.ts`).
  */
 
 export interface RateLimitRule {
@@ -48,7 +50,7 @@ export const RATE_LIMITS = {
 } satisfies Record<string, RateLimitRule>
 
 function hashKey(bucket: string, identifier: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || "dev-rate-limit-key"
+  const secret = getRequiredSecret("RATE_LIMIT_SECRET")
   return createHmac("sha256", secret).update(`${bucket}|${identifier}`).digest("hex")
 }
 
