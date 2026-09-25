@@ -13,4 +13,8 @@ export async function register() {
 
   const { warnMockServices } = await import("./lib/mock-mode")
   warnMockServices()
+
+  // 🔒 Aviso (no aborta) si el remitente de Resend no está bien configurado.
+  const { checkResendSender } = await import("./lib/resend")
+  checkResendSender()
 }

@@ -1,7 +1,7 @@
 import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
-import { getResend } from "@/lib/resend"
+import { getResend, getResendFrom } from "@/lib/resend"
 import { escapeHtml } from "@/lib/escape-html"
 
 export interface LeadData {
@@ -99,8 +99,7 @@ async function sendConfirmationEmail(data: LeadData): Promise<void> {
 
   try {
     await resend.emails.send({
-      // TODO: sustituir por el remitente verificado real de IDESIE en Resend.
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: data.email,
       subject: "Hemos recibido tu solicitud — IDESIE",
       html: `<p>Hola ${escapeHtml(data.firstName)},</p>

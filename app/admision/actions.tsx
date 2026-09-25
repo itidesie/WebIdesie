@@ -1,6 +1,6 @@
 "use server"
 
-import { getResend } from "@/lib/resend"
+import { getResend, getResendFrom } from "@/lib/resend"
 import { escapeHtml, singleLine } from "@/lib/escape-html"
 
 // Perezoso a propósito: invocar getResend() a nivel de módulo repetía
@@ -60,7 +60,7 @@ export async function submitAdmissionForm(formData: AdmissionFormData) {
   try {
     // Send email notification to admin using Resend
     await resend.emails.send({
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: "info@idesie.com",
       replyTo: email,
       subject: `Nueva Solicitud de Admisión - ${singleLine(`${firstName} ${lastName}`)}`,
@@ -103,7 +103,7 @@ export async function submitAdmissionForm(formData: AdmissionFormData) {
 
     // Send confirmation email to applicant
     await resend.emails.send({
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: email,
       subject: "Confirmación de Solicitud - Master BIM IDESIE",
       html: `

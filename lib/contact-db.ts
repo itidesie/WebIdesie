@@ -1,7 +1,7 @@
 import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
-import { getResend } from "@/lib/resend"
+import { getResend, getResendFrom } from "@/lib/resend"
 import { escapeHtml, singleLine } from "@/lib/escape-html"
 
 export interface MensajeContactoData {
@@ -65,8 +65,7 @@ async function sendNotificationEmails(data: MensajeContactoData): Promise<void> 
 
   try {
     await resend.emails.send({
-      // TODO: sustituir por el remitente verificado real de IDESIE en Resend.
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: "info@idesie.com",
       replyTo: data.email,
       // El asunto es texto plano: en una sola línea (sin saltos de línea colados por el usuario).
@@ -84,7 +83,7 @@ ${data.programa ? `<p><strong>Programa:</strong> ${escapeHtml(data.programa)}</p
 
   try {
     await resend.emails.send({
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: data.email,
       subject: "Hemos recibido tu mensaje — IDESIE",
       html: `<p>Hola ${escapeHtml(data.nombre)},</p>

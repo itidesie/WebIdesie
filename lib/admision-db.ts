@@ -1,7 +1,7 @@
 import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
-import { getResend } from "@/lib/resend"
+import { getResend, getResendFrom } from "@/lib/resend"
 import { escapeHtml, safeHttpUrl } from "@/lib/escape-html"
 
 export type ProgramaAdmision = "MBIM" | "MBBE" | "EMBIM" | "Online"
@@ -87,8 +87,7 @@ async function sendNotificationEmails(data: SolicitudAdmisionData): Promise<void
 
   try {
     await resend.emails.send({
-      // TODO: sustituir por el remitente verificado real de IDESIE en Resend.
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: "info@idesie.com",
       replyTo: data.email,
       subject: `Nueva solicitud de admisión — ${data.programaSolicitado}`,
@@ -110,7 +109,7 @@ ${cvHref ? `<p><strong>CV:</strong> <a href="${escapeHtml(cvHref)}">${escapeHtml
 
   try {
     await resend.emails.send({
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: data.email,
       subject: `Confirmación: solicitud de admisión recibida — ${data.programaSolicitado}`,
       html: `<p>Hola ${escapeHtml(data.nombreCompleto)},</p>

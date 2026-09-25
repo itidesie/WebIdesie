@@ -1,7 +1,7 @@
 "use server"
 
 import { headers } from "next/headers"
-import { getResend } from "@/lib/resend"
+import { getResend, getResendFrom } from "@/lib/resend"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { escapeHtml } from "@/lib/escape-html"
@@ -124,7 +124,7 @@ export async function submitDeletionRequest(formData: FormData) {
   try {
     // Send email notification using Resend
     await resend.emails.send({
-      from: "IDESIE <onboarding@resend.dev>", // Replace with your verified domain
+      from: getResendFrom(),
       to: "info@idesie.com", // Admin email
       replyTo: email,
       subject: `${dbFailurePrefix}Solicitud de Baja de Base de Datos - ${nombreSubject}`,
@@ -145,7 +145,7 @@ export async function submitDeletionRequest(formData: FormData) {
 
     // Send confirmation email to user
     await resend.emails.send({
-      from: "IDESIE <onboarding@resend.dev>",
+      from: getResendFrom(),
       to: email,
       subject: "Confirmación de Solicitud de Baja - IDESIE",
       html: `
