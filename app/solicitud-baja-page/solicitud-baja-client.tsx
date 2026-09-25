@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { submitDeletionRequest } from "./actions"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { HoneypotField } from "@/components/honeypot-field"
 
 export default function SolicitudBajaClient() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -62,6 +63,7 @@ export default function SolicitudBajaClient() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <HoneypotField />
         {/* Nombre Completo */}
         <div>
           <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-2">
