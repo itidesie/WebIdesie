@@ -86,6 +86,9 @@ export async function submitDeletionRequest(formData: FormData) {
   // el aviso por email (sigue siendo la vía por la que el equipo se entera),
   // pero se deja en el log porque significa que falta trazabilidad.
   let persisted = false
+  // Distinto de "no persistida": en modo mock (desarrollo) no se guarda a propósito
+  // y no es un fallo. Solo un error REAL de la base de datos activa el aviso al equipo.
+  let persistFailed = false
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Solicitudes de baja", `no persistida en Supabase → ${email}`)
   } else {
@@ -95,6 +98,7 @@ export async function submitDeletionRequest(formData: FormData) {
       if (error) throw error
       persisted = true
     } catch (error) {
+      persistFailed = true
       console.error(
         "[baja] No se pudo guardar la solicitud en solicitudes_baja (¿scripts/036 sin aplicar?):",
         error instanceof Error ? error.message : error,
@@ -109,6 +113,13 @@ export async function submitDeletionRequest(formData: FormData) {
   // El asunto no es HTML, pero un salto de línea colado no debe poder romperlo.
   const nombreSubject = nombre.replace(/[\r\n]+/g, " ")
 
+  // 🔒 Si la BD falló, el email al equipo es el ÚNICO registro de esta petición de
+  // supresión: se marca en el asunto y en el cuerpo para que se apunte a mano.
+  const dbFailurePrefix = persistFailed ? "[NO GUARDADA EN BD] " : ""
+  const dbFailureNotice = persistFailed
+    ? `<p style="background:#fff3cd;border:1px solid #ffca2c;padding:12px;"><strong>⚠️ NO SE HA PODIDO GUARDAR EN LA BASE DE DATOS.</strong> Esta solicitud de baja solo existe en este email: regístrala a mano (tabla <code>solicitudes_baja</code>) y avisa a quien administre la base de datos.</p>`
+    : ""
+
   let notified = false
   try {
     // Send email notification using Resend
@@ -116,8 +127,9 @@ export async function submitDeletionRequest(formData: FormData) {
       from: "IDESIE <onboarding@resend.dev>", // Replace with your verified domain
       to: "info@idesie.com", // Admin email
       replyTo: email,
-      subject: `Solicitud de Baja de Base de Datos - ${nombreSubject}`,
+      subject: `${dbFailurePrefix}Solicitud de Baja de Base de Datos - ${nombreSubject}`,
       html: `
+        ${dbFailureNotice}
         <h2>Nueva Solicitud de Baja de Base de Datos</h2>
         <p><strong>Nombre:</strong> ${nombreSafe}</p>
         <p><strong>Email:</strong> ${emailSafe}</p>
