@@ -7,6 +7,19 @@ import { verifyAdminSecret } from "@/lib/admin-secret"
 import { createAdminSession, revokeAdminSession } from "@/lib/admin-session"
 import { parseJsonBody, stringInput } from "@/lib/api-validation"
 import { isSameOriginRequest } from "@/lib/verify-origin"
+import { checkRateLimit, getClientIp, padToMinDuration, RATE_LIMITS, tooManyRequestsResponse } from "@/lib/rate-limit"
+
+/**
+ * Las respuestas FALLIDAS del login tardan siempre al menos esto: iguala el
+ * tiempo de "clave incorrecta" con independencia de cuántas filas de
+ * `admin_users` compare bcrypt, y encarece cada intento de fuerza bruta.
+ */
+const FAILED_LOGIN_MIN_MS = 1500
+
+async function failWithDelay(startedAt: number, body: { error: string }, status: number) {
+  await padToMinDuration(startedAt, FAILED_LOGIN_MIN_MS)
+  return NextResponse.json(body, { status })
+}
 
 const loginSchema = z.object({
   secretKey: stringInput(z.string().min(1, "Clave secreta requerida")),
@@ -21,6 +34,7 @@ const loginSchema = z.object({
  * y cualquier Server Action futura — ver CLAUDE.md §4.
  */
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
   try {
     // 🔒 2026-09-04 (43) — comprobación de origen: este es el único
     // endpoint del proyecto que crea una sesión autenticada fuera de una
@@ -28,6 +42,14 @@ export async function POST(request: NextRequest) {
     // fábrica) — ver `lib/verify-origin.ts`.
     if (!isSameOriginRequest(request)) {
       return NextResponse.json({ error: "Origen de la petición no válido" }, { status: 403 })
+    }
+
+    // 🔒 Rate limiting por IP: 5 intentos cada 15 min (cada POST cuenta, sea
+    // correcto o no). Antes de tocar bcrypt ni la base de datos.
+    const ip = getClientIp(request.headers)
+    const limit = await checkRateLimit(RATE_LIMITS.adminLogin, ip)
+    if (!limit.allowed) {
+      return tooManyRequestsResponse(limit.retryAfterSeconds)
     }
 
     // Sin base de datos no hay forma de validar la clave. Denegamos en vez de
@@ -47,7 +69,7 @@ export async function POST(request: NextRequest) {
     const matchedId = await verifyAdminSecret(secretKey)
 
     if (matchedId === null) {
-      return NextResponse.json({ error: "Invalid secret key" }, { status: 401 })
+      return failWithDelay(startedAt, { error: "Invalid secret key" }, 401)
     }
 
     const supabase = getSupabaseServerClient()
@@ -60,7 +82,7 @@ export async function POST(request: NextRequest) {
     // auditoría de seguridad, ver CLAUDE.md §4.
     const sessionCookieValue = await createAdminSession(matchedId, {
       userAgent: request.headers.get("user-agent") ?? undefined,
-      ipAddress: request.headers.get("x-forwarded-for") ?? undefined,
+      ipAddress: ip,
     })
 
     const cookieStore = await cookies()
@@ -75,7 +97,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[admin/auth] Authentication error:", error)
-    return NextResponse.json({ error: "Authentication failed" }, { status: 500 })
+    return failWithDelay(startedAt, { error: "Authentication failed" }, 500)
   }
 }
 
