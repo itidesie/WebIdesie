@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { HONEYPOT_FIELD, isHoneypotTriggered } from "@/lib/honeypot"
 
 /**
  * 🔒 2026-09-04 (43) — hallazgo BAJO de la auditoría de seguridad: los
@@ -23,6 +24,15 @@ export async function parseJsonBody<S extends z.ZodTypeAny>(
     raw = await request.json()
   } catch {
     return { success: false, response: NextResponse.json({ error: "JSON inválido" }, { status: 400 }) }
+  }
+
+  // 🔒 Honeypot anti-bots: si el campo trampa viene relleno se descarta la
+  // petición sin procesarla, con una respuesta de éxito falsa para que el bot
+  // no sepa que lo hemos detectado. Se comprueba antes de validar el esquema
+  // (zod descartaría el campo desconocido sin avisar).
+  if (typeof raw === "object" && raw !== null && isHoneypotTriggered((raw as Record<string, unknown>)[HONEYPOT_FIELD])) {
+    console.warn("[honeypot] Petición descartada (campo trampa relleno)")
+    return { success: false, response: NextResponse.json({ success: true, ok: true }) }
   }
 
   const result = schema.safeParse(raw)

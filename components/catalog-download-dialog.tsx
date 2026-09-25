@@ -9,6 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { HoneypotField } from '@/components/honeypot-field';
+import { HONEYPOT_FIELD } from '@/lib/honeypot';
 
 interface CatalogDownloadDialogProps {
   catalogId: string;
@@ -70,6 +72,7 @@ export function CatalogDownloadDialog({
           catalogId,
           catalogName,
           rgpdAceptado,
+          [HONEYPOT_FIELD]: formData.get(HONEYPOT_FIELD),
         }),
       });
 
@@ -106,6 +109,7 @@ export function CatalogDownloadDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <HoneypotField />
           <div>
             <label
               htmlFor="name"

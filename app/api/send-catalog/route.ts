@@ -4,6 +4,8 @@ import * as path from 'path'
 import { z } from 'zod'
 import { parseJsonBody, stringInput } from '@/lib/api-validation'
 import { createDescargaCatalogo, type DescargaCatalogoData } from '@/lib/catalogo-db'
+import { strictEmail } from '@/lib/validate-email'
+import { checkRateLimit, getClientIp, RATE_LIMITS, tooManyRequestsResponse } from '@/lib/rate-limit'
 
 /**
  * 2026-09-05 — migrado de Brevo a Resend (46), y persistencia en Supabase
@@ -20,11 +22,11 @@ import { createDescargaCatalogo, type DescargaCatalogoData } from '@/lib/catalog
  * `/api/leads` — no se inventa una nueva.
  */
 const catalogSchema = z.object({
-  email: stringInput(z.string().trim().email('Email inválido')),
-  name: stringInput(z.string().trim().min(1, 'Nombre, email y teléfono son obligatorios')),
+  email: stringInput(strictEmail('Email inválido')),
+  name: stringInput(z.string().trim().min(1, 'Nombre, email y teléfono son obligatorios').max(200, 'Nombre demasiado largo')),
   telefono: stringInput(z.string().trim().regex(/^[+\d][\d\s]{7,}$/, 'Teléfono no válido')),
   catalogId: stringInput(z.string().trim().min(1, 'Email y catalogoId son requeridos')),
-  catalogName: z.string().trim().optional(),
+  catalogName: z.string().trim().max(200).optional(),
   rgpdAceptado: z.preprocess(
     (v) => v ?? false,
     z.boolean().refine((v) => v === true, { message: 'Debes aceptar la política de privacidad para continuar' }),
@@ -63,9 +65,20 @@ const programaMapping: Record<string, DescargaCatalogoData['programa']> = {
 
 export async function POST(request: NextRequest) {
   try {
+    // 🔒 Este endpoint envía un PDF de hasta ~18 MB a la dirección que le
+    // indiquen: sin límites era un relé de correo con adjunto. Límite por IP
+    // ANTES de parsear nada, y por email después de validarlo.
+    const ipLimit = await checkRateLimit(RATE_LIMITS.catalogIp, getClientIp(request.headers))
+    if (!ipLimit.allowed) return tooManyRequestsResponse(ipLimit.retryAfterSeconds)
+
     const parsed = await parseJsonBody(request, catalogSchema)
     if (!parsed.success) return parsed.response
     const { email, name, telefono, catalogId, catalogName, rgpdAceptado } = parsed.data
+
+    // `email` ya viene en minúsculas (strictEmail), así que a@x.com y A@X.com
+    // comparten contador.
+    const emailLimit = await checkRateLimit(RATE_LIMITS.catalogEmail, email)
+    if (!emailLimit.allowed) return tooManyRequestsResponse(emailLimit.retryAfterSeconds)
 
     const pdfFileName = catalogMapping[catalogId]
     if (!pdfFileName) {
