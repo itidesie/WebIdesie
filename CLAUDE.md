@@ -5265,6 +5265,18 @@ los archivos que toques.
 
 ## 7. Registro de cambios
 
+### 2026-09-25 (52) — Endurecimiento de seguridad (rama `security/critical-fixes-2026-09`)
+
+Auditoría en `docs/auditoria-formularios-y-datos.md`. Cambios (commits `eeffcae`…`fbee3c0`):
+- **`requireAdmin()`** (`lib/admin-auth.ts`) como primera instrucción de las Server Actions de gestión: una acción `"use server"` es un endpoint POST y `middleware.ts` solo cubre páginas `/admin/*` (`/blog/edit/[slug]` está fuera). Las escrituras conservan además la clave secreta.
+- **Login solo con bcrypt** (`lib/admin-secret.ts`): eliminado el fallback en texto plano y la migración automática. Una fila sin hash bcrypt válido no puede entrar. ⚠️ `scripts/002` sembró `admin` con una contraseña en claro que está en el historial de git: rotarla.
+- **Secretos propios, sin fallback**: `ADMIN_SESSION_SECRET` (firma la cookie de admin) y `RATE_LIMIT_SECRET` (HMAC del limitador), ya NO derivados de `SUPABASE_SERVICE_ROLE_KEY`. La app aborta al arrancar si faltan (`lib/env.ts` + `instrumentation.ts`). Generar: `openssl rand -base64 48`. Cambiar `ADMIN_SESSION_SECRET` cierra todas las sesiones.
+- **Rate limiting** (`lib/rate-limit.ts`, `scripts/035_rate_limits.sql`) en login (solo fallos; IP+username 5/15 min e IP 15/15 min; un login correcto reinicia) y en todos los formularios públicos; **honeypot** (`lib/honeypot.ts`); email estricto (`lib/validate-email.ts`).
+- **`RESEND_FROM_EMAIL`**: remitente único (`getResendFrom()` en `lib/resend.ts`); en producción se registra un error si falta o es `onboarding@resend.dev`.
+- **Baja**: guarda en `solicitudes_baja` (`scripts/036`), escapa HTML; si falla la BD el email lleva `[NO GUARDADA EN BD]`.
+- `/api/leads` y `/api/leads/disponibilidad` devuelven 410 (sin consumidores; la tabla `leads` se conserva).
+- Migraciones pendientes de aplicar, en orden: `034`, `035`, `036`.
+
 ### 2026-09-10 (51) — /landing "MBIM 2.0": Meta Pixel reconectado + CTAs a un flujo real de agendamiento
 
 ⚠️ Este documento tiene secciones (§0, §5) que dicen que `/landing` se
