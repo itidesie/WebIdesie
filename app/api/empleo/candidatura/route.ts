@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, candidaturaSchema)
   if (!parsed.success) return parsed.response
-  const { ofertaId, ofertaPuesto, nombre, email, telefono, mensaje, cvUrl } = parsed.data
+  const { ofertaId, ofertaPuesto, nombre, email, telefono, mensaje } = parsed.data
 
   try {
     const candidatura = await createCandidatura({
@@ -46,7 +46,10 @@ export async function POST(request: NextRequest) {
       email,
       telefono,
       mensaje: mensaje || null,
-      cvUrl: cvUrl || null,
+      // 🔒 La subida de CV ya no existe: ningún formulario envía este campo. Se
+      // ignora lo que llegue del cliente (antes acababa como enlace "CV:" en el
+      // email al equipo, es decir, una URL arbitraria de un desconocido).
+      cvUrl: null,
     })
 
     return NextResponse.json({ success: true, id: candidatura.id })

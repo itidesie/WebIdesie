@@ -1,6 +1,7 @@
 "use server"
 
 import { getResend } from "@/lib/resend"
+import { escapeHtml, singleLine } from "@/lib/escape-html"
 
 // Perezoso a propósito: invocar getResend() a nivel de módulo repetía
 // exactamente el bug de `next build` que ya rompía la conexión a la base de datos
@@ -44,13 +45,25 @@ export async function submitAdmissionForm(formData: AdmissionFormData) {
     }
   }
 
+  // 🔒 Todo lo que viene del usuario se escapa antes de entrar en el HTML.
+  const safe = {
+    firstName: escapeHtml(firstName),
+    lastName: escapeHtml(lastName),
+    email: escapeHtml(email),
+    phone: escapeHtml(phone),
+    country: escapeHtml(country),
+    institution: escapeHtml(institution || "No especificado"),
+    degree: escapeHtml(degree || "No especificado"),
+    experience: escapeHtml(experience || "No especificado"),
+  }
+
   try {
     // Send email notification to admin using Resend
     await resend.emails.send({
       from: "IDESIE <onboarding@resend.dev>",
       to: "info@idesie.com",
       replyTo: email,
-      subject: `Nueva Solicitud de Admisión - ${firstName} ${lastName}`,
+      subject: `Nueva Solicitud de Admisión - ${singleLine(`${firstName} ${lastName}`)}`,
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <div style="background-color: #006cff; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
@@ -61,17 +74,17 @@ export async function submitAdmissionForm(formData: AdmissionFormData) {
           <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;">
             <div style="margin-bottom: 20px;">
               <h3 style="color: #006cff; margin-bottom: 10px;">Información Personal</h3>
-              <p><strong>Nombre:</strong> ${firstName} ${lastName}</p>
-              <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-              <p><strong>Teléfono:</strong> <a href="tel:${phone}">${phone}</a></p>
-              <p><strong>País:</strong> ${country}</p>
+              <p><strong>Nombre:</strong> ${safe.firstName} ${safe.lastName}</p>
+              <p><strong>Email:</strong> <a href="mailto:${safe.email}">${safe.email}</a></p>
+              <p><strong>Teléfono:</strong> <a href="tel:${safe.phone}">${safe.phone}</a></p>
+              <p><strong>País:</strong> ${safe.country}</p>
             </div>
 
             <div style="margin-bottom: 20px;">
               <h3 style="color: #006cff; margin-bottom: 10px;">Información Académica y Profesional</h3>
-              <p><strong>Institución de procedencia:</strong> ${institution || "No especificado"}</p>
-              <p><strong>Título/Grado:</strong> ${degree || "No especificado"}</p>
-              <p><strong>Experiencia profesional:</strong> ${experience || "No especificado"}</p>
+              <p><strong>Institución de procedencia:</strong> ${safe.institution}</p>
+              <p><strong>Título/Grado:</strong> ${safe.degree}</p>
+              <p><strong>Experiencia profesional:</strong> ${safe.experience}</p>
             </div>
 
             <div style="margin-top: 30px; padding: 15px; background-color: #e3f2fd; border-left: 4px solid #006cff; border-radius: 4px;">
@@ -100,7 +113,7 @@ export async function submitAdmissionForm(formData: AdmissionFormData) {
           </div>
           
           <div style="background-color: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;">
-            <p>Hola <strong>${firstName}</strong>,</p>
+            <p>Hola <strong>${safe.firstName}</strong>,</p>
             
             <p>Hemos recibido tu solicitud de admisión para el <strong>Master BIM</strong> de IDESIE Business & Tech School.</p>
             

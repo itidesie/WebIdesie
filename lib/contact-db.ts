@@ -2,7 +2,7 @@ import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { getResend } from "@/lib/resend"
-import { escapeHtml } from "@/lib/escape-html"
+import { escapeHtml, singleLine } from "@/lib/escape-html"
 
 export interface MensajeContactoData {
   nombre: string
@@ -69,7 +69,8 @@ async function sendNotificationEmails(data: MensajeContactoData): Promise<void> 
       from: "IDESIE <onboarding@resend.dev>",
       to: "info@idesie.com",
       replyTo: data.email,
-      subject: `Nuevo mensaje de contacto${data.asunto ? ` — ${data.asunto}` : ""}`,
+      // El asunto es texto plano: en una sola línea (sin saltos de línea colados por el usuario).
+      subject: `Nuevo mensaje de contacto${data.asunto ? ` — ${singleLine(data.asunto)}` : ""}`,
       html: `<h2>Nuevo mensaje de contacto</h2>
 <p><strong>Nombre:</strong> ${escapeHtml(data.nombre)}</p>
 <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>

@@ -2,7 +2,7 @@ import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { getResend } from "@/lib/resend"
-import { escapeHtml } from "@/lib/escape-html"
+import { escapeHtml, safeHttpUrl, singleLine } from "@/lib/escape-html"
 
 export interface CandidaturaData {
   ofertaId: number | null
@@ -67,7 +67,11 @@ export async function createCandidatura(data: CandidaturaData): Promise<Candidat
 async function sendNotificationEmails(data: CandidaturaData): Promise<void> {
   const resend = getResend()
   const ofertaPuestoSafe = escapeHtml(data.ofertaPuesto)
-  const cvLine = data.cvUrl ? `<p><strong>CV:</strong> <a href="${escapeHtml(data.cvUrl)}">${escapeHtml(data.cvUrl)}</a></p>` : ""
+  // Solo se enlaza el CV si es una URL http(s): escapeHtml no impide un `javascript:`.
+  const cvHref = safeHttpUrl(data.cvUrl)
+  const cvLine = cvHref ? `<p><strong>CV:</strong> <a href="${escapeHtml(cvHref)}">${escapeHtml(cvHref)}</a></p>` : ""
+  // El puesto llega del cliente: en el asunto (texto plano) no puede llevar saltos de línea.
+  const puestoSubject = singleLine(data.ofertaPuesto)
 
   try {
     await resend.emails.send({
@@ -75,7 +79,7 @@ async function sendNotificationEmails(data: CandidaturaData): Promise<void> {
       from: "IDESIE <onboarding@resend.dev>",
       to: "info@idesie.com",
       replyTo: data.email,
-      subject: `Nueva candidatura — ${data.ofertaPuesto}`,
+      subject: `Nueva candidatura — ${puestoSubject}`,
       html: `<h2>Nueva candidatura: ${ofertaPuestoSafe}</h2>
 <p><strong>Nombre:</strong> ${escapeHtml(data.nombre)}</p>
 <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
@@ -91,7 +95,7 @@ ${cvLine}`,
     await resend.emails.send({
       from: "IDESIE <onboarding@resend.dev>",
       to: data.email,
-      subject: `Confirmación: candidatura recibida para ${data.ofertaPuesto}`,
+      subject: `Confirmación: candidatura recibida para ${puestoSubject}`,
       html: `<p>Hola ${escapeHtml(data.nombre)},</p>
 <p>Hemos recibido tu candidatura para <strong>${ofertaPuestoSafe}</strong>. Nuestro equipo la revisará y se pondrá en contacto contigo en breve.</p>
 <p>Gracias por tu interés en IDESIE.</p>`,

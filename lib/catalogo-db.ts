@@ -2,7 +2,7 @@ import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { getResend } from "@/lib/resend"
-import { escapeHtml } from "@/lib/escape-html"
+import { escapeHtml, singleLine } from "@/lib/escape-html"
 
 export interface DescargaCatalogoData {
   nombre: string
@@ -74,7 +74,8 @@ async function sendCatalogEmail(data: DescargaCatalogoData): Promise<void> {
       // TODO: sustituir por el remitente verificado real de IDESIE en Resend.
       from: "IDESIE <onboarding@resend.dev>",
       to: data.email,
-      subject: `Tu catálogo de ${safeCatalogName} - IDESIE`,
+      // Asunto = texto plano (no HTML): sin escapeHtml (mostraría "&amp;") pero en una sola línea.
+      subject: `Tu catálogo de ${singleLine(data.catalogoNombre || "IDESIE")} - IDESIE`,
       html: `<!DOCTYPE html>
 <html>
   <head>

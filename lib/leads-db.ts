@@ -104,7 +104,7 @@ async function sendConfirmationEmail(data: LeadData): Promise<void> {
       to: data.email,
       subject: "Hemos recibido tu solicitud — IDESIE",
       html: `<p>Hola ${escapeHtml(data.firstName)},</p>
-<p>Hemos recibido tu solicitud de sesión informativa${data.masterInteres ? ` sobre el ${escapeHtml(data.masterInteres)}` : ""} para el <strong>${sesion}</strong> (hora española).</p>
+<p>Hemos recibido tu solicitud de sesión informativa${data.masterInteres ? ` sobre el ${escapeHtml(data.masterInteres)}` : ""} para el <strong>${escapeHtml(sesion)}</strong> (hora española).</p>
 <p>Te confirmaremos por teléfono o email antes de la sesión. Gracias por tu interés en IDESIE.</p>`,
     })
   } catch (err) {

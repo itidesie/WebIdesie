@@ -2,7 +2,7 @@ import "server-only"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { getResend } from "@/lib/resend"
-import { escapeHtml } from "@/lib/escape-html"
+import { escapeHtml, safeHttpUrl } from "@/lib/escape-html"
 
 export type ProgramaAdmision = "MBIM" | "MBBE" | "EMBIM" | "Online"
 export type OrigenAdmision = "landing" | "mbim" | "mbbe" | "embim" | "online"
@@ -82,6 +82,8 @@ async function sendNotificationEmails(data: SolicitudAdmisionData): Promise<void
   const resend = getResend()
 
   const programaSafe = escapeHtml(data.programaSolicitado)
+  // Solo se enlaza el CV si es una URL http(s): escapeHtml no impide un `javascript:`.
+  const cvHref = safeHttpUrl(data.cvUrl)
 
   try {
     await resend.emails.send({
@@ -100,7 +102,7 @@ ${data.titulacionPrevia ? `<p><strong>Titulación previa:</strong> ${escapeHtml(
 ${data.universidadOrigen ? `<p><strong>Universidad de origen:</strong> ${escapeHtml(data.universidadOrigen)}</p>` : ""}
 <p><strong>Origen:</strong> ${escapeHtml(data.origen)}</p>
 ${data.mensaje ? `<p><strong>Mensaje:</strong><br>${escapeHtml(data.mensaje).replace(/\n/g, "<br>")}</p>` : ""}
-${data.cvUrl ? `<p><strong>CV:</strong> <a href="${escapeHtml(data.cvUrl)}">${escapeHtml(data.cvUrl)}</a></p>` : ""}`,
+${cvHref ? `<p><strong>CV:</strong> <a href="${escapeHtml(cvHref)}">${escapeHtml(cvHref)}</a></p>` : ""}`,
     })
   } catch (err) {
     console.error("[admision] No se pudo enviar el aviso al equipo:", err)
