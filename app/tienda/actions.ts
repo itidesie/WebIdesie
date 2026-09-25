@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { MOCK_PRODUCTS, type MockProduct } from "@/lib/mock-data"
 import { verifyAdminSecret } from "@/lib/admin-secret"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export interface Producto {
   id: number
@@ -70,6 +71,9 @@ function mockToProducto(mock: MockProduct): Producto {
 /** Todos los productos, activos e inactivos — para el listado de admin.
  * Distinto de `/api/productos`, que solo devuelve `activo = true`. */
 export async function getAdminProductos(): Promise<Producto[]> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Productos", "listado de admin simulado")
     return MOCK_PRODUCTS.map(mockToProducto)
@@ -90,6 +94,9 @@ export async function getAdminProductos(): Promise<Producto[]> {
 
 /** Un producto por slug, activo o no — para la página de edición. */
 export async function getAdminProductoBySlug(slug: string): Promise<Producto | null> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Productos", `ficha de admin simulada → ${slug}`)
     const mock = MOCK_PRODUCTS.find((p) => p.slug === slug)
@@ -163,6 +170,9 @@ function readProductoFields(formData: FormData) {
 }
 
 export async function createProducto(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   const isValidKey = await verifySecretKey(secretKey)
   if (!isValidKey) {
@@ -227,6 +237,9 @@ export async function createProducto(formData: FormData): Promise<ActionResult> 
 }
 
 export async function updateProducto(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   const isValidKey = await verifySecretKey(secretKey)
   if (!isValidKey) {
@@ -297,6 +310,9 @@ export async function updateProducto(formData: FormData): Promise<ActionResult> 
 }
 
 export async function deleteProducto(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   const isValidKey = await verifySecretKey(secretKey)
   if (!isValidKey) {

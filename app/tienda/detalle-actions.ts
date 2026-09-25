@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { verifyAdminSecret } from "@/lib/admin-secret"
 import { isTablaDetalleValida, camposDeTabla } from "@/lib/producto-detalle-config"
+import { requireAdmin } from "@/lib/admin-auth"
 
 interface ActionResult {
   success: boolean
@@ -38,6 +39,9 @@ function revalidateProducto(slug: string) {
 
 /** Filas de una de las 5 tablas de detalle genéricas, ordenadas por `orden`. */
 export async function getListaItems(tabla: string, productoId: number): Promise<ItemDetalle[]> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (!isTablaDetalleValida(tabla)) return []
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Tienda — detalle", `listado simulado de ${tabla} para producto ${productoId}`)
@@ -59,6 +63,9 @@ export async function getListaItems(tabla: string, productoId: number): Promise<
 }
 
 export async function saveListaItem(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 
@@ -107,6 +114,9 @@ export async function saveListaItem(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteListaItem(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 
@@ -132,6 +142,9 @@ export async function deleteListaItem(formData: FormData): Promise<ActionResult>
 }
 
 export async function reorderListaItem(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 

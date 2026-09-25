@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { verifyAdminSecret } from "@/lib/admin-secret"
+import { requireAdmin } from "@/lib/admin-auth"
 
 interface ActionResult {
   success: boolean
@@ -81,6 +82,9 @@ function revalidateProducto(slug: string) {
 
 /** Módulos de un producto con sus temas anidados, ambos ordenados por `orden`. */
 export async function getModulosConTemas(productoId: number): Promise<Modulo[]> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Tienda — módulos", `listado simulado para producto ${productoId}`)
     return []
@@ -102,6 +106,9 @@ export async function getModulosConTemas(productoId: number): Promise<Modulo[]> 
 }
 
 export async function saveModulo(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 
@@ -146,6 +153,9 @@ export async function saveModulo(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteModulo(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 
@@ -170,6 +180,9 @@ export async function deleteModulo(formData: FormData): Promise<ActionResult> {
 }
 
 export async function reorderModulo(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 
@@ -198,6 +211,9 @@ export async function reorderModulo(formData: FormData): Promise<ActionResult> {
 }
 
 export async function saveTema(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 
@@ -236,6 +252,9 @@ export async function saveTema(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteTema(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 
@@ -258,6 +277,9 @@ export async function deleteTema(formData: FormData): Promise<ActionResult> {
 }
 
 export async function reorderTema(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await checkSecret(secretKey))) return { success: false, message: "Clave secreta inválida." }
 

@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { MOCK_BLOG_POSTS, MOCK_TAGS, type MockBlogPost } from "@/lib/mock-data"
 import { verifyAdminSecret } from "@/lib/admin-secret"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export interface BlogPost {
   id: number
@@ -317,6 +318,9 @@ export async function getAllTags(): Promise<string[]> {
 }
 
 export async function createBlogPost(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   const title = formData.get("title") as string
   const content = formData.get("content") as string
@@ -391,6 +395,9 @@ export async function createBlogPost(formData: FormData): Promise<ActionResult> 
 }
 
 export async function updateBlogPost(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   const slug = formData.get("slug") as string
   const title = formData.get("title") as string
@@ -457,6 +464,9 @@ export async function updateBlogPost(formData: FormData): Promise<ActionResult> 
 }
 
 export async function deleteBlogPost(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   const slug = formData.get("slug") as string
 
@@ -496,5 +506,8 @@ export async function deleteBlogPost(formData: FormData): Promise<ActionResult> 
 }
 
 export async function getAllBlogPosts(): Promise<BlogPost[]> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   return getBlogPosts()
 }

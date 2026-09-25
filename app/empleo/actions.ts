@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { MOCK_OFERTAS, type MockOferta } from "@/lib/mock-data"
 import { verifyAdminSecret } from "@/lib/admin-secret"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export interface Oferta {
   id: number
@@ -54,6 +55,9 @@ function mockToOferta(mock: MockOferta): Oferta {
 
 /** Todas las ofertas, activas e inactivas — para el listado de admin. */
 export async function getAdminOfertas(): Promise<Oferta[]> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Empleo", "listado de admin simulado")
     return MOCK_OFERTAS.map(mockToOferta)
@@ -74,6 +78,9 @@ export async function getAdminOfertas(): Promise<Oferta[]> {
 
 /** Una oferta por id, activa o no — para la página de edición. */
 export async function getAdminOfertaById(id: number): Promise<Oferta | null> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Empleo", `ficha de admin simulada → ${id}`)
     const mock = MOCK_OFERTAS.find((o) => o.id === id)
@@ -129,6 +136,9 @@ function readOfertaFields(formData: FormData) {
 }
 
 export async function createOferta(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await verifySecretKey(secretKey))) {
     return { success: false, message: "Clave secreta inválida." }
@@ -176,6 +186,9 @@ export async function createOferta(formData: FormData): Promise<ActionResult> {
 }
 
 export async function updateOferta(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await verifySecretKey(secretKey))) {
     return { success: false, message: "Clave secreta inválida." }
@@ -238,6 +251,9 @@ export interface Candidatura {
 
 /** Candidaturas recibidas, más recientes primero — para /admin/empleo/candidaturas. */
 export async function getAdminCandidaturas(): Promise<Candidatura[]> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Empleo", "listado de candidaturas simulado")
     return []
@@ -257,6 +273,9 @@ export async function getAdminCandidaturas(): Promise<Candidatura[]> {
 }
 
 export async function deleteOferta(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await verifySecretKey(secretKey))) {
     return { success: false, message: "Clave secreta inválida." }

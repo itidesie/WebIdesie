@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isMock, logMock } from "@/lib/mock-mode"
 import { verifyAdminSecret } from "@/lib/admin-secret"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export type EstadoSolicitud = "pendiente" | "revisado" | "aceptado" | "rechazado"
 
@@ -49,6 +50,9 @@ async function verifySecretKey(secretKey: string): Promise<boolean> {
 
 /** Todas las solicitudes, más recientes primero — para /admin/admisiones. */
 export async function getAdminSolicitudes(): Promise<Solicitud[]> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
     logMock("Admisiones", "listado de admin simulado")
     return []
@@ -69,6 +73,9 @@ export async function getAdminSolicitudes(): Promise<Solicitud[]> {
 
 /** Cambia el estado de gestión de una solicitud (pendiente/revisado/aceptado/rechazado). */
 export async function updateEstadoSolicitud(formData: FormData): Promise<ActionResult> {
+  // 🔒 Sesión de admin obligatoria (ver lib/admin-auth.ts). Primera instrucción, fuera de todo try/catch.
+  await requireAdmin()
+
   const secretKey = formData.get("secretKey") as string
   if (!(await verifySecretKey(secretKey))) {
     return { success: false, message: "Clave secreta inválida." }
