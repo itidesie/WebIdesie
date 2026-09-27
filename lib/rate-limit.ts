@@ -52,6 +52,10 @@ export const RATE_LIMITS = {
   checkoutOrderIp: { bucket: "checkout-order-ip", max: 10, windowSeconds: 15 * 60 },
   // Anti-enumeración de cupones: solo cuenta las verificaciones que traen un código.
   checkoutCouponIp: { bucket: "checkout-coupon-ip", max: 20, windowSeconds: 15 * 60 },
+  leadsIp: { bucket: "leads-ip", max: 5, windowSeconds: 60 * 60 },
+  // Solo consulta qué horas están libres — sin datos personales, pero se pide igual para que
+  // no se pueda raspar el calendario completo a base de peticiones.
+  leadsDisponibilidadIp: { bucket: "leads-disponibilidad-ip", max: 30, windowSeconds: 15 * 60 },
 } satisfies Record<string, RateLimitRule>
 
 function hashKey(bucket: string, identifier: string): string {

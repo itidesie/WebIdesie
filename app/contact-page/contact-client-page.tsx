@@ -14,6 +14,7 @@ import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { HoneypotField } from "@/components/honeypot-field"
 import { HONEYPOT_FIELD } from "@/lib/honeypot"
+import { LeadCaptureForm } from "@/components/lead-capture-form"
 
 /**
  * Motivos de contacto que pueden llegar por querystring desde las paginas de
@@ -21,8 +22,9 @@ import { HONEYPOT_FIELD } from "@/lib/honeypot"
  *
  * Sustituyen a las antiguas rutas /asesoria-online y /solicitar-clase-online,
  * que nunca existieron y devolvian 404. Cuando llega un motivo se abre
- * directamente la pestana de Calendly, que es el unico canal que hoy funciona
- * de punta a punta (el formulario de mensaje todavia no tiene onSubmit).
+ * directamente la pestana de "Solicitar información", con el formulario
+ * propio (LeadCaptureForm) — antes era un embed de Calendly, retirado el
+ * 2026-09-28 junto con el resto de usos en el sitio.
  */
 const MOTIVOS = {
   asesoria: {
@@ -56,8 +58,8 @@ export default function ContactClientPage() {
       : contexto.asunto
     : ""
 
-  // Si venimos de un CTA de programa, arrancamos en Calendly en vez de en el
-  // formulario de mensaje.
+  // Si venimos de un CTA de programa, arrancamos en la pestaña de
+  // "Solicitar información" en vez de en el formulario de mensaje.
   const [activeTab, setActiveTab] = useState<"message" | "schedule">(
     motivo ? "schedule" : "message",
   )
@@ -86,6 +88,7 @@ export default function ContactClientPage() {
           nombre: formData.get("name"),
           [HONEYPOT_FIELD]: formData.get(HONEYPOT_FIELD),
           email: formData.get("email"),
+          telefono: formData.get("phone") || undefined,
           asunto: subject || undefined,
           mensaje: formData.get("message"),
           motivo: motivo ?? undefined,
@@ -141,7 +144,7 @@ export default function ContactClientPage() {
             variant={activeTab === "schedule" ? "default" : "ghost"}
             className="rounded-lg text-xs sm:text-sm w-full sm:w-auto"
           >
-            <CalendarCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Agendar Llamada
+            <CalendarCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" /> Solicitar Información
           </Button>
         </div>
 
@@ -199,6 +202,19 @@ export default function ContactClientPage() {
                 />
               </div>
               <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Teléfono
+                </label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="+34 600 000 000"
+                  className="w-full"
+                />
+              </div>
+              <div>
                 <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
                   Asunto
                 </label>
@@ -241,21 +257,15 @@ export default function ContactClientPage() {
           </>
         ) : (
           <>
-            <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-gray-900 text-center">Agenda una Llamada</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-gray-900 text-center">Cuéntanos qué necesitas</CardTitle>
             <CardDescription className="mb-4 sm:mb-6 text-sm sm:text-base text-gray-700 text-center">
-              Selecciona una fecha y hora conveniente para hablar con nuestro equipo de admisiones o consultoria.
+              Déjanos tus datos y te contactamos. Si prefieres que te llamemos a una hora concreta, puedes agendarlo — es opcional.
             </CardDescription>
-            <div className="relative w-full h-[450px] sm:h-[500px] md:h-[600px] rounded-lg overflow-hidden border border-gray-200 shadow-inner">
-              {/* Calendly Embed */}
-              <iframe
-                src="https://calendly.com/idesie-info/30min"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                title="Agenda una llamada con IDESIE"
-                className="absolute inset-0"
-              ></iframe>
-            </div>
+            <LeadCaptureForm
+              origen={contexto ? `Contacto · ${contexto.asunto}` : "Contacto"}
+              programaPreseleccionado={programa === "MBIM" || programa === "MBBE" || programa === "EMBIM" || programa === "Online" ? programa : undefined}
+              className="p-0 sm:p-0 shadow-none ring-0 rounded-none"
+            />
           </>
         )}
       </Card>

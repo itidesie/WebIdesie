@@ -7,6 +7,7 @@ import { escapeHtml, singleLine } from "@/lib/escape-html"
 export interface MensajeContactoData {
   nombre: string
   email: string
+  telefono: string | null
   asunto: string | null
   mensaje: string
   motivo: string | null
@@ -38,6 +39,7 @@ export async function createMensajeContacto(data: MensajeContactoData): Promise<
     .insert({
       nombre: data.nombre,
       email: data.email,
+      telefono: data.telefono,
       asunto: data.asunto,
       mensaje: data.mensaje,
       motivo: data.motivo,
@@ -73,6 +75,7 @@ async function sendNotificationEmails(data: MensajeContactoData): Promise<void> 
       html: `<h2>Nuevo mensaje de contacto</h2>
 <p><strong>Nombre:</strong> ${escapeHtml(data.nombre)}</p>
 <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+${data.telefono ? `<p><strong>Teléfono:</strong> ${escapeHtml(data.telefono)}</p>` : ""}
 ${data.asunto ? `<p><strong>Asunto:</strong> ${escapeHtml(data.asunto)}</p>` : ""}
 ${data.programa ? `<p><strong>Programa:</strong> ${escapeHtml(data.programa)}</p>` : ""}
 <p><strong>Mensaje:</strong><br>${escapeHtml(data.mensaje).replace(/\n/g, "<br>")}</p>`,

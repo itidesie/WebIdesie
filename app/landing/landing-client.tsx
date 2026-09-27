@@ -7,69 +7,60 @@ import { StatCounter } from "@/components/home/stat-counter"
 import { MetaPixel, trackMetaPixelEvent } from "@/components/meta-pixel"
 import { AdmisionModal } from "@/components/admision-modal"
 import { CatalogDownloadDialog } from "@/components/catalog-download-dialog"
+import { LeadCaptureForm } from "@/components/lead-capture-form"
 
 /**
- * Réplica fiel de `mbim-landing.html` (mockup "MBIM 2.0" aportado por el
- * cliente) — mismo estilo, contenido e información, ver comentario de
- * cabecera en `page.tsx`. Todo el CSS vive scopeado bajo `.mbim2-landing`
- * (en vez de `:root`/`body`/selectores de elemento sueltos como en el
- * archivo original) para no filtrar reglas al resto del sitio, que
- * comparte el mismo documento — la única adaptación real respecto al
- * archivo fuente, el resto es una traducción directa a JSX.
+ * 2026-09-27 — Rediseño visual completo ("Premium SaaS moderno"), pedido
+ * explícito del cliente: "súper enfocado en vender, moderno, estilo limpio".
+ * Dirección elegida entre 3 propuestas (ver CLAUDE.md) sobre la versión
+ * anterior ("MBIM 2.0", réplica fiel de un mockup de blueprint técnico:
+ * retículas de dibujo técnico, edificio 3D animado, chips mono con bordes
+ * cuadrados, degradados azul→violeta). Esta pasada NO toca ni un carácter
+ * de contenido real (textos, cifras, testimonios, programa, precios,
+ * fechas) — solo el sistema visual: fondo blanco predominante, tarjetas con
+ * sombra suave y esquinas redondeadas, un único azul de marca + ámbar como
+ * acento puntual (sin violeta), botones tipo píldora, sin retículas de
+ * dibujo técnico ni el edificio 3D del hero (sustituido por una pila de
+ * tarjetas limpias con la misma información real: plazas, testimonio,
+ * contrato). Toda la coreografía GSAP (`use*Ref` más abajo) seguía
+ * intacta: los elementos puramente decorativos que se retiran del JSX
+ * (`.grid-bg`, `.corner-mark`, el edificio `.b3d-*`) no los anima ningún
+ * otro flujo de negocio — sus `querySelectorAll` sencillamente no
+ * encuentran nada y no hacen nada, sin errores.
  *
- * 2026-09-09 — La sección "Programa" (antes un acordeón de 9 módulos, con
- * `useState` para abrir/cerrar uno cada vez) se rediseñó como mapa visual:
- * las 9 tarjetas están todas a la vista de golpe, sin apertura/cierre, así
- * que ya no queda ningún estado de React en este componente.
- *
- * 2026-09-07 — Rediseño de motion/estética (contenido sin tocar): capa de
- * interacción reutilizada tal cual del resto del sitio — `useGsapEffect`
- * (gsap.context + ScrollTrigger, gated por prefers-reduced-motion en 3
- * capas: no se descarga GSAP, el propio `setup` no se ejecuta, y el estado
- * "from" de cada `gsap.from()` nunca llega a aplicarse porque el setup no
- * corre — no hace falta una cuarta capa de anulación CSS para casi nada de
- * lo añadido aquí), `StatCounter` (contadores), el mismo `back.out(1.6-1.8)`
- * de "sello" que usan `balance-ledger.tsx`/`convenio-card.tsx`, y el cursor
- * global + magnetismo + `.btn-sweep` que ya vienen de `SiteMotionProvider`
- * (`data-magnetic` en los CTA reales). Tipografía (Space Grotesk/IBM Plex)
- * y paleta se mantienen intactas — decisión explícita del cliente de
- * conservar la identidad propia de esta página. El `<h1>` del hero sigue
- * animándose solo en CSS puro (protege el LCP) — nunca con GSAP.
+ * Igual que en la versión anterior, el `<h1>` del hero se sigue animando
+ * solo con CSS (`.hero-line`/`.hero-fade`) para no comprometer el LCP.
  */
 
 const LANDING_STYLES = `
 .mbim2-landing{
-  /* Paleta remapeada a los tokens reales de la marca IDESIE (2026-09-07) —
-     ya no es la paleta "blueprint" propia del mockup. --blueprint pasa a
-     ser el azul de marca (--color-brand), --signal (antes un naranja
-     inventado) pasa a --color-brand-strong para quedarse dentro de la
-     misma familia de azules que usa el resto del sitio, --paper/--line
-     reutilizan los tokens de papel/borde ya existentes. --ink reutiliza el
-     mismo gray-950 que ya usan las secciones oscuras del resto del sitio
-     (M3/M6 de las páginas de programa) — "no introduzcas un segundo
-     negro", ver CLAUDE.md. */
-  --ink:var(--color-gray-950, #030712);
-  --paper:var(--color-paper, #f2ede4);
-  --paper-2:var(--color-paper-strong, #e5dccd);
+  --ink:var(--color-gray-950, #0b0f19);
+  --white:#ffffff;
+  --bg:#ffffff;
+  --bg-soft:#f6f8fb;
   --blueprint:var(--color-brand, #006cff);
+  --blueprint-strong:var(--color-brand-strong, #0052cc);
+  --blueprint-soft:color-mix(in oklab, var(--color-brand, #006cff) 8%, white 92%);
+  --blueprint-line:color-mix(in oklab, var(--color-brand, #006cff) 24%, white 76%);
   --blueprint-light:color-mix(in oklab, var(--color-brand, #006cff) 55%, white 45%);
-  --signal:var(--color-brand-strong, #0052cc);
-  --line:var(--border, #d1d5db);
-  --line-soft:color-mix(in oklab, var(--border, #d1d5db) 55%, white 45%);
-  --white:var(--background, #ffffff);
-  /* Gris apagado — pedido explícito como "--dim" en el rediseño de "El
-     Problema" (2026-09-08). Mismo gris ya usado sin token en
-     .compare .old li::before (#9AA1A9); se sube a variable para no
-     repetir el hex y para que el resto de la sección lo reutilice. */
-  --dim:#9AA1A9;
-  --dark-2:color-mix(in oklab, var(--ink) 88%, var(--blueprint) 12%);
-  --maxw:1120px;
+  --amber:var(--secondary, #ffba08);
+  --amber-strong:#c97d05;
+  --line:#e7eaf0;
+  --muted:#5b6472;
+  --dim:#98a2b3;
+  --maxw:1160px;
+  --radius-lg:28px;
+  --radius-md:18px;
+  --radius-sm:12px;
+  --shadow-soft:0 24px 48px -28px rgba(16,24,40,0.18);
+  --shadow-soft-sm:0 12px 28px -18px rgba(16,24,40,0.16);
+  --shadow-brand:0 24px 48px -20px rgba(0,108,255,0.38);
   margin:0;
-  background:var(--paper);
+  background:var(--bg);
   color:var(--ink);
   font-family:var(--font-ibm-plex-sans), sans-serif;
   font-size:17px;
-  line-height:1.6;
+  line-height:1.65;
   -webkit-font-smoothing:antialiased;
 }
 .mbim2-landing, .mbim2-landing *{box-sizing:border-box;}
@@ -77,1250 +68,298 @@ const LANDING_STYLES = `
   font-family:var(--font-space-grotesk), sans-serif;
   font-weight:600;
   margin:0;
-  letter-spacing:-0.01em;
+  letter-spacing:-0.015em;
 }
-.mbim2-landing .mono{
-  font-family:var(--font-ibm-plex-mono), monospace;
-}
-.mbim2-landing .wrap{
-  max-width:var(--maxw);
-  margin:0 auto;
-  padding:0 32px;
-}
+.mbim2-landing .mono{font-family:var(--font-ibm-plex-mono), monospace;}
+.mbim2-landing .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px;}
 .mbim2-landing a{color:inherit;text-decoration:none;}
 .mbim2-landing ul{margin:0;padding:0;list-style:none;}
 .mbim2-landing p{margin:0;}
 
-/* ---------- background drafting grid ---------- */
-.mbim2-landing .grid-bg{
-  position:absolute;
-  inset:0;
-  background-image:
-    linear-gradient(var(--line-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-  background-size:40px 40px;
-  opacity:0.5;
-  pointer-events:none;
-}
-
 /* ---------- nav ---------- */
 .mbim2-landing .nav{
-  position:sticky;
-  top:0;
-  z-index:50;
-  background:rgba(237,239,239,0.92);
-  backdrop-filter:blur(6px);
+  position:sticky;top:0;z-index:50;
+  background:rgba(255,255,255,0.88);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   border-bottom:1px solid var(--line);
 }
-.mbim2-landing .nav-inner{
-  max-width:var(--maxw);
-  margin:0 auto;
-  padding:18px 32px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-.mbim2-landing .nav-brand{
-  display:flex;
-  align-items:baseline;
-  gap:10px;
-}
-.mbim2-landing .nav-brand .school{
-  font-size:12px;
-  color:var(--ink);
-  opacity:0.55;
-  font-family:var(--font-ibm-plex-mono), monospace;
-}
-.mbim2-landing .nav-brand .name{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-weight:700;
-  font-size:20px;
-}
-.mbim2-landing .nav-links{
-  display:flex;
-  align-items:center;
-  gap:28px;
-  font-size:14.5px;
-}
-.mbim2-landing .nav-links a{
-  color:var(--ink);
-  opacity:0.75;
-  border-bottom:1px solid transparent;
-  padding-bottom:2px;
-  transition:opacity .15s, border-color .15s;
-}
-.mbim2-landing .nav-links a:hover{opacity:1;border-color:var(--blueprint-light);}
+.mbim2-landing .nav-inner{max-width:var(--maxw);margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+.mbim2-landing .nav-brand{display:flex;align-items:baseline;gap:10px;}
+.mbim2-landing .nav-brand .school{font-size:11.5px;color:var(--muted);font-family:var(--font-ibm-plex-mono), monospace;letter-spacing:0.04em;}
+.mbim2-landing .nav-brand .name{font-family:var(--font-space-grotesk), sans-serif;font-weight:700;font-size:19px;}
+.mbim2-landing .nav-links{display:flex;align-items:center;gap:30px;font-size:14.5px;}
+.mbim2-landing .nav-links a{color:var(--muted);border-bottom:1px solid transparent;padding-bottom:2px;transition:color .15s, border-color .15s;}
+.mbim2-landing .nav-links a:hover{color:var(--ink);border-color:var(--blueprint-line);}
 .mbim2-landing .btn{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  font-family:var(--font-ibm-plex-sans), sans-serif;
-  font-weight:600;
-  font-size:14.5px;
-  padding:11px 20px;
-  border-radius:2px;
-  cursor:pointer;
-  border:1.5px solid transparent;
-  transition:transform .12s, background .15s, border-color .15s;
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font-ibm-plex-sans), sans-serif;font-weight:600;font-size:14.5px;
+  padding:12px 22px;border-radius:999px;cursor:pointer;border:1.5px solid transparent;
+  transition:transform .16s var(--ease-out-quart, ease), background .18s, border-color .18s, box-shadow .18s, color .18s;
 }
-.mbim2-landing .btn:hover{transform:translateY(-1px);}
-.mbim2-landing .btn-signal{
-  background:var(--signal);
-  color:var(--white);
-}
-.mbim2-landing .btn-signal:hover{background:color-mix(in oklab, var(--signal) 85%, black 15%);}
-.mbim2-landing .btn-ghost{
-  background:transparent;
-  color:var(--ink);
-  border-color:var(--ink);
-}
+.mbim2-landing .btn:hover{transform:translateY(-2px);}
+.mbim2-landing .btn-signal{background:var(--blueprint);color:var(--white);box-shadow:var(--shadow-brand);}
+.mbim2-landing .btn-signal:hover{background:var(--blueprint-strong);}
+.mbim2-landing .btn-ghost{background:var(--white);color:var(--ink);border-color:var(--line);}
 .mbim2-landing .btn-ghost:hover{border-color:var(--blueprint);color:var(--blueprint);}
-.mbim2-landing .btn-ghost-light{
-  background:transparent;
-  color:var(--white);
-  border-color:rgba(255,255,255,0.4);
-}
-.mbim2-landing .btn-ghost-light:hover{border-color:var(--white);}
-/* Bug real encontrado en la auditoría de responsive (2026-09-09): con el
-   corte en 720px, cualquier ancho de tablet (720-999px aprox.) mostraba
-   LOS DOS a la vez — los 6 enlaces + el botón — sin espacio suficiente:
-   el nombre de marca partía en dos líneas, "Admisión" quedaba pegado al
-   botón sin aire, y "Reservar plaza" partía en dos líneas también.
-   Medido con los enlaces reales: a 900px el hueco entre el último enlace
-   y el botón era de 4px; no hay aire real hasta ~1000px. Se sube el corte
-   de 720 a 1000 para los dos a la vez (nunca se muestra uno sin el otro) —
-   por debajo de 1000px la cabecera vuelve al mismo tratamiento mínimo
-   (solo marca) que ya usaba el móvil, en vez de dejar una franja de
-   "tablet" a medio romper. */
+.mbim2-landing .btn-ghost-light{background:rgba(255,255,255,0.08);color:var(--white);border-color:rgba(255,255,255,0.4);}
+.mbim2-landing .btn-ghost-light:hover{border-color:var(--white);background:rgba(255,255,255,0.16);}
 .mbim2-landing .nav-cta{display:none;}
 @media(min-width:1000px){.mbim2-landing .nav-cta{display:inline-flex;}}
 @media(max-width:999px){.mbim2-landing .nav-links{display:none;}}
 
-/* ---------- eyebrow / dimension label ---------- */
+/* ---------- eyebrow / kicker ---------- */
 .mbim2-landing .kicker{
   font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:12.5px;
-  letter-spacing:0.08em;
-  color:var(--blueprint);
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:18px;
+  font-size:12px;letter-spacing:0.06em;color:var(--blueprint);
+  display:flex;align-items:center;gap:10px;margin-bottom:18px;
 }
-.mbim2-landing .kicker::before{
-  content:"";
-  width:22px;
-  height:1px;
-  background:var(--blueprint);
-}
-
-/* ---------- kicker con píldora + punto de pulso (solo hero, 2026-09-08) ----
-   Modificador de .kicker — la clase base se deja intacta, se sigue usando
-   sin píldora ni pulso en el resto de secciones. Mismo mecanismo de pulso
-   que .cta-pulse-wrap (anillo que crece y se desvanece), aplicado aquí a
-   un punto de 6px en vez de a un botón entero. */
 .mbim2-landing .kicker-pill{
-  display:inline-flex;
-  align-items:center;
-  gap:9px;
-  padding:7px 14px 7px 11px;
-  border:1px solid var(--line);
-  border-radius:999px;
-  background:var(--white);
-  margin-bottom:0;
+  display:inline-flex;align-items:center;gap:9px;
+  padding:8px 16px 8px 12px;border-radius:999px;
+  background:var(--blueprint-soft);border:1px solid var(--blueprint-line);
+  color:var(--blueprint-strong);
 }
-.mbim2-landing .kicker-pill::before{content:none;}
-.mbim2-landing .kicker-dot{
-  position:relative;
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:var(--blueprint);
-  flex-shrink:0;
-  box-shadow:0 0 0 0 rgba(0,108,255,0.55);
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .kicker-dot{
-    animation:mbim2-dot-pulse 2.2s var(--ease-in-out-quint, cubic-bezier(0.83,0,0.17,1)) infinite;
-  }
-}
-@keyframes mbim2-dot-pulse{
-  0%{box-shadow:0 0 0 0 rgba(0,108,255,0.55);}
-  70%{box-shadow:0 0 0 8px rgba(0,108,255,0);}
-  100%{box-shadow:0 0 0 8px rgba(0,108,255,0);}
-}
+.mbim2-landing .kicker-dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--blueprint);flex-shrink:0;box-shadow:0 0 0 0 rgba(0,108,255,0.55);}
+@media(prefers-reduced-motion:no-preference){.mbim2-landing .kicker-dot{animation:mbim2-dot-pulse 2.2s var(--ease-in-out-quint, cubic-bezier(0.83,0,0.17,1)) infinite;}}
+@keyframes mbim2-dot-pulse{0%{box-shadow:0 0 0 0 rgba(0,108,255,0.55);}70%{box-shadow:0 0 0 8px rgba(0,108,255,0);}100%{box-shadow:0 0 0 8px rgba(0,108,255,0);}}
 
-/* ---------- barra de urgencia (2026-09-08, 3ª pasada) ----------
-   Franja sobre las dos columnas del hero, dentro del flujo normal (no
-   position:fixed sobre el viewport) — la barra de navegación ya es
-   sticky; dos elementos fijos apilados uno sobre otro sería confuso al
-   hacer scroll. Fondo degradado (antes sólido) + "quedan pocas plazas"
-   en ámbar, pedido explícito del cliente. */
+/* ---------- barra de urgencia ---------- */
 .mbim2-landing .urgency-bar{
-  background:linear-gradient(90deg, var(--ink), color-mix(in oklab, var(--ink) 82%, var(--blueprint) 18%));
-  color:rgba(255,255,255,0.92);
-  text-align:center;
-  padding:7px 20px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:12px;
-  letter-spacing:0.02em;
+  background:var(--blueprint-soft);
+  border-bottom:1px solid var(--blueprint-line);
+  color:var(--ink);
+  text-align:center;padding:9px 20px;
+  font-family:var(--font-ibm-plex-mono), monospace;font-size:12px;letter-spacing:0.01em;
 }
-.mbim2-landing .urgency-bar b{color:var(--white);font-weight:600;}
-.mbim2-landing .urgency-bar .amber{color:var(--secondary, #ffba08);font-weight:600;}
+.mbim2-landing .urgency-bar b{font-weight:600;}
+.mbim2-landing .urgency-bar .amber{color:var(--amber-strong);font-weight:600;}
 .mbim2-landing .urgency-bar .sep{margin:0 10px;opacity:0.4;}
 
-/* ---------- hero: dos columnas ---------- */
-.mbim2-landing .hero{
-  position:relative;
-  overflow:hidden;
-  border-bottom:1px solid var(--line);
-  /* Anula el padding:88px 0 genérico de ".mbim2-landing section" — el hero
-     no es una sección de contenido más, controla su propio espaciado (la
-     barra de urgencia debe quedar pegada al nav, sin hueco). Sin esto,
-     medido con Puppeteer: ~88px de hueco vacío entre nav y barra. */
-  padding:0;
-}
-.mbim2-landing .hero-inner{
-  position:relative;
-  z-index:2;
-}
-/* Bug real encontrado en auditoría (2026-09-09): el hero era full-bleed
-   SIN ningún tope de ancho — en monitores anchos (1920px+) el contenido
-   de la columna izquierda (limitado a 600px por .hero-copy-inner) se
-   quedaba apilado en una esquina con cientos de píxeles de hueco vacío a
-   su lado, y las tarjetas flotantes de la derecha (ancladas a los bordes
-   de una columna cada vez más ancha) se alejaban del edificio 3D en vez
-   de acompañarlo. Medido con Puppeteer: a 1440px la composición ya
-   funciona bien (validada en sesiones anteriores) — se limita el ancho
-   máximo del grid a partir de ahí, en vez de dejarlo crecer sin freno.
-   Fuera de ese límite, el fondo papel de la sección asoma en los márgenes
-   — funde bien con el degradado cálido de la columna izquierda y deja el
-   panel oscuro de la derecha como un panel "enmarcado", no una barra
-   oscura infinita. */
+/* ---------- hero ---------- */
+.mbim2-landing .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);padding:0;}
+.mbim2-landing .hero-inner{position:relative;z-index:2;}
 .mbim2-landing .hero-grid{
-  position:relative;
-  display:grid;
-  grid-template-columns:minmax(0,1.1fr) minmax(0,0.9fr);
-  align-items:stretch;
-  min-height:680px;
-  max-width:1600px;
-  margin:0 auto;
+  position:relative;display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(0,0.95fr);
+  align-items:stretch;min-height:640px;max-width:1560px;margin:0 auto;
 }
-@media(max-width:960px){
-  .mbim2-landing .hero-grid{grid-template-columns:1fr;min-height:0;}
-}
+@media(max-width:960px){.mbim2-landing .hero-grid{grid-template-columns:1fr;min-height:0;}}
 
-/* columna izquierda: mesh gradient + retícula técnica
-   Padding compactado (2026-09-08, 2ª pasada): con la barra de urgencia +
-   todo el contenido, la versión anterior (72/56px) empujaba el CTA fuera
-   de la primera pantalla en portátiles de 900px de alto — medido con
-   Puppeteer, no a ojo (chips a top:977px, CTA a top:1060px). */
-.mbim2-landing .hero-copy-col{
-  position:relative;
-  overflow:hidden;
-  padding:14px 32px 12px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-}
-.mbim2-landing .hero-copy-col::before{
-  content:"";
-  position:absolute;
-  inset:-20%;
-  background:
-    radial-gradient(42% 48% at 15% 15%, color-mix(in oklab, var(--blueprint) 14%, transparent) 0%, transparent 70%),
-    radial-gradient(38% 44% at 85% 80%, color-mix(in oklab, var(--secondary, #ffba08) 12%, transparent) 0%, transparent 70%);
-  pointer-events:none;
-}
-/* retícula con máscara radial — se desvanece hacia los bordes en vez de
-   cortar en seco, pedido explícito del mockup ("grid-bg con máscara"). */
-.mbim2-landing .hero-copy-col .grid-bg{
-  opacity:0.4;
-  -webkit-mask-image:radial-gradient(ellipse 70% 70% at 30% 35%, black 0%, transparent 75%);
-  mask-image:radial-gradient(ellipse 70% 70% at 30% 35%, black 0%, transparent 75%);
-}
-.mbim2-landing .hero-copy-inner{
-  position:relative;
-  z-index:2;
-  max-width:660px;
-}
+.mbim2-landing .hero-copy-col{position:relative;padding:64px 48px;display:flex;flex-direction:column;justify-content:center;}
+.mbim2-landing .hero-copy-inner{position:relative;z-index:2;max-width:600px;}
 
-/* prueba social: 3 avatares apilados, gradiente azul→violeta consistente
-   (2026-09-08, 3ª pasada) — sin cifra en el texto per el mockup nuevo, pero
-   el cliente pidió mantener "+4.700" ya confirmado en la ronda anterior. */
-.mbim2-landing .hero-social-proof{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin-bottom:14px;
-}
+.mbim2-landing .hero-social-proof{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
 .mbim2-landing .avatar-stack{display:flex;}
-.mbim2-landing .avatar-stack span{
-  width:28px;height:28px;
-  border-radius:50%;
-  border:2px solid var(--paper);
-  margin-left:-8px;
-  background:linear-gradient(135deg, var(--blueprint), #7c3aed);
-}
+.mbim2-landing .avatar-stack span{width:28px;height:28px;border-radius:50%;border:2px solid var(--white);margin-left:-8px;background:linear-gradient(135deg, var(--blueprint), var(--blueprint-strong));box-shadow:var(--shadow-soft-sm);}
 .mbim2-landing .avatar-stack span:first-child{margin-left:0;}
-.mbim2-landing .hero-social-proof p{font-size:13.5px;color:#3A424B;}
+.mbim2-landing .hero-social-proof p{font-size:13.5px;color:var(--muted);}
 .mbim2-landing .hero-social-proof p b{color:var(--ink);font-weight:600;}
 
 .mbim2-landing .hero h1{
   font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
-  font-weight:700;
-  font-size:clamp(30px, 3.2vw, 42px);
-  line-height:1.05;
-  letter-spacing:-0.035em;
-  max-width:none;
+  font-weight:700;font-size:clamp(32px, 3.4vw, 46px);line-height:1.08;letter-spacing:-0.03em;
 }
-.mbim2-landing .hero h1 .accent{
-  background:linear-gradient(100deg, var(--blueprint) 15%, #7c3aed 90%);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.mbim2-landing .hero-cursor{
-  display:inline-block;
-  width:3px;
-  height:0.78em;
-  margin-left:4px;
-  background:var(--blueprint);
-  vertical-align:-0.1em;
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .hero-cursor{animation:mbim2-cursor-blink 1.05s steps(1) infinite;}
-}
+.mbim2-landing .hero h1 .accent{color:var(--blueprint);}
+.mbim2-landing .hero-cursor{display:inline-block;width:3px;height:0.78em;margin-left:4px;background:var(--blueprint);vertical-align:-0.1em;}
+@media(prefers-reduced-motion:no-preference){.mbim2-landing .hero-cursor{animation:mbim2-cursor-blink 1.05s steps(1) infinite;}}
 @keyframes mbim2-cursor-blink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
 
-/* Bug real encontrado en auditoría (2026-09-09): .hero-line/.hero-line-2/
-   .hero-fade/.hero-fade-late se usaban en el JSX de abajo sin definirlos
-   nunca dentro de LANDING_STYLES — como esta hoja no tiene la protección
-   de .mbim2-landing en estos 4 nombres, el navegador aplicaba sin querer
-   la regla GLOBAL del mismo nombre en app/globals.css (el mecanismo de
-   revelado de titular que ya usan las páginas de máster). Esa regla pone
-   .hero-line en display:block — y como el <h1> de aquí ADEMÁS separaba
-   cada línea con un <br/> manual, el salto de línea se duplicaba: bloque
-   + <br/> = casi el doble de alto entre líneas del titular. Se elimina la
-   dependencia del mecanismo global (nunca fue una reutilización a
-   propósito, a diferencia de .journey-spotlight/.btn-sweep/.site-cursor,
-   sí documentadas como tales más abajo) y se define aquí, scoped, el
-   mismo efecto que sí parecía buscarse (los delays por línea ya estaban
-   escritos a mano en el JSX: 0.05s/0.18s/0.32s). */
-.mbim2-landing .hero-line{
-  display:block;
-}
+.mbim2-landing .hero-line{display:block;}
 @media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .hero-line{
-    animation:mbim2-hero-line-in 1.1s var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1)) both;
-  }
-  .mbim2-landing .hero-fade{
-    animation:mbim2-hero-fade-in 1s var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1)) both;
-    animation-delay:0.3s;
-  }
+  .mbim2-landing .hero-line{animation:mbim2-hero-line-in 1.1s var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1)) both;}
+  .mbim2-landing .hero-fade{animation:mbim2-hero-fade-in 1s var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1)) both;animation-delay:0.3s;}
   .mbim2-landing .hero-fade-late{animation-delay:0.45s;}
 }
-@keyframes mbim2-hero-line-in{
-  from{opacity:0;transform:translate3d(0, 0.55em, 0);}
-  to{opacity:1;transform:none;}
-}
-@keyframes mbim2-hero-fade-in{
-  from{opacity:0;transform:translate3d(0, 1.5rem, 0);}
-  to{opacity:1;transform:none;}
-}
+@keyframes mbim2-hero-line-in{from{opacity:0;transform:translate3d(0,0.5em,0);}to{opacity:1;transform:none;}}
+@keyframes mbim2-hero-fade-in{from{opacity:0;transform:translate3d(0,1.25rem,0);}to{opacity:1;transform:none;}}
 
-.mbim2-landing .hero-sub{
-  max-width:520px;
-  margin-top:16px;
-  font-size:15px;
-  color:#3A424B;
-}
+.mbim2-landing .hero-sub{max-width:520px;margin-top:18px;font-size:16px;color:var(--muted);}
 
-/* chips de datos: fondo blanco translúcido con blur, número grande arriba
-   + etiqueta pequeña debajo (apilado, no en fila — 2026-09-08, 3ª pasada),
-   con hover que eleva la tarjeta. */
-.mbim2-landing .hero-chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:12px;
-  margin-top:22px;
-}
+.mbim2-landing .hero-chips{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px;}
 .mbim2-landing .hero-chip{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-  padding:10px 14px;
-  border:1px solid rgba(0,108,255,0.16);
-  border-radius:10px;
-  background:rgba(255,255,255,0.55);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-  transition:transform .18s var(--ease-out-quart, ease), border-color .18s, box-shadow .18s;
+  display:flex;flex-direction:column;gap:2px;padding:14px 18px;border-radius:var(--radius-sm);
+  background:var(--white);border:1px solid var(--line);box-shadow:var(--shadow-soft-sm);
+  transition:transform .2s var(--ease-out-quart, ease), box-shadow .2s var(--ease-out-quart, ease);
 }
-.mbim2-landing .hero-chip:hover{
-  transform:translateY(-3px);
-  border-color:var(--blueprint-light);
-  box-shadow:0 10px 24px -14px rgba(0,108,255,0.35);
-}
-.mbim2-landing .hero-chip .chip-value{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-weight:600;
-  font-size:19px;
-  color:var(--blueprint);
-  line-height:1;
-}
-.mbim2-landing .hero-chip .chip-label{font-size:11.5px;color:#5B6470;}
-@media(prefers-reduced-motion:reduce){
-  .mbim2-landing .hero-chip{transition:none;}
-}
+.mbim2-landing .hero-chip:hover{transform:translateY(-3px);box-shadow:var(--shadow-soft);}
+.mbim2-landing .hero-chip .chip-value{font-family:var(--font-ibm-plex-mono), monospace;font-weight:600;font-size:21px;color:var(--blueprint);line-height:1;}
+.mbim2-landing .hero-chip .chip-label{font-size:12px;color:var(--muted);}
+@media(prefers-reduced-motion:reduce){.mbim2-landing .hero-chip{transition:none;}}
 
-.mbim2-landing .hero-actions{
-  display:flex;
-  gap:16px;
-  margin-top:22px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-/* Antes un <p> sin interacción — ahora un enlace real a la reserva de
-   Calendly (/contact-page?motivo=asesoria, mismo destino que el resto de
-   los nuevos CTA de "sesión informativa" de esta página, 2026-09-09). El
-   texto ya hablaba de una llamada gratuita de 15 min: solo hacía falta
-   dejarla pulsable. Voz mono, coherente con el resto de "notas de
-   confianza" de la página — no es un botón, es un enlace discreto. */
+.mbim2-landing .hero-actions{display:flex;gap:14px;margin-top:28px;flex-wrap:wrap;align-items:center;}
 .mbim2-landing .hero-trust-note{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:12px;
-  color:#5B6470;
-  margin-top:14px;
-  text-decoration:none;
-  border-bottom:1px solid transparent;
-  padding-bottom:1px;
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ibm-plex-mono), monospace;
+  font-size:12px;color:var(--muted);margin-top:16px;text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;
   transition:color .2s var(--ease-out-quart, ease), border-color .2s var(--ease-out-quart, ease);
 }
-.mbim2-landing .hero-trust-note:hover{
-  color:var(--blueprint);
-  border-color:currentColor;
-}
+.mbim2-landing .hero-trust-note:hover{color:var(--blueprint);border-color:currentColor;}
 .mbim2-landing .hero-trust-note svg{flex-shrink:0;}
 
-/* CTA primario: gradiente azul→violeta + sombra azul difusa + brillo
-   diagonal en bucle continuo (no solo al hover — 2026-09-08, 3ª pasada).
-   Sustituye a .btn-signal solo en este botón (no se toca la clase
-   compartida): un fondo sólido definido después en la cascada pisaría el
-   degradado, así que este botón usa .btn + .hero-cta-gradient, sin
-   .btn-signal. */
-.mbim2-landing .hero-cta-gradient{
-  position:relative;
-  overflow:hidden;
-  background:linear-gradient(100deg, var(--blueprint), #7c3aed);
-  color:var(--white);
-  box-shadow:0 16px 32px -14px rgba(0,108,255,0.5);
-}
-.mbim2-landing .hero-cta-gradient::after{
-  content:"";
-  position:absolute;
-  top:0;left:-60%;
-  width:35%;height:100%;
-  background:linear-gradient(115deg, transparent, rgba(255,255,255,0.4), transparent);
-  pointer-events:none;
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .hero-cta-gradient::after{
-    animation:mbim2-cta-sweep 2.6s linear infinite;
-  }
-}
-@keyframes mbim2-cta-sweep{
-  0%{left:-60%;}
-  100%{left:140%;}
-}
+.mbim2-landing .hero-cta-gradient{background:linear-gradient(120deg, var(--blueprint), var(--blueprint-strong));color:var(--white);box-shadow:var(--shadow-brand);}
 
-/* columna derecha: panel oscuro con retícula + edificio 3D real
-   Rehecho por completo (2026-09-08, 3ª pasada) — sustituye al cubo de la
-   2ª pasada por un edificio de oficinas compuesto de 4 volúmenes reales
-   (transform-style:preserve-3d), pedido explícito y detallado del
-   cliente. Las 3 tarjetas vuelven a flotar sobre el edificio (posición
-   absoluta, no en columna propia) — es un diseño distinto al del cubo,
-   no una regresión del ajuste anterior. */
+/* ---------- hero: panel visual (sin edificio 3D, tarjetas reales apiladas) ---------- */
 .mbim2-landing .hero-visual-col{
-  position:relative;
-  overflow:hidden;
-  background:radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--blueprint) 12%, var(--ink)) 0%, var(--ink) 62%);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:40px 28px;
+  position:relative;overflow:hidden;
+  background:radial-gradient(120% 100% at 20% 0%, color-mix(in oklab, var(--blueprint) 22%, var(--ink)) 0%, var(--ink) 60%);
+  display:flex;align-items:center;justify-content:center;padding:56px 40px;
 }
-.mbim2-landing .hero-visual-col .grid-bg{
-  background-image:
-    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-  opacity:1;
-}
+.mbim2-landing .hero-visual-glow{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;}
+.mbim2-landing .hero-visual-glow--1{width:420px;height:420px;top:-120px;right:-100px;background:color-mix(in oklab, var(--blueprint) 45%, transparent);}
+.mbim2-landing .hero-visual-glow--2{width:340px;height:340px;bottom:-140px;left:-90px;background:color-mix(in oklab, var(--amber) 32%, transparent);}
+.mbim2-landing .hero-visual-stack{position:relative;z-index:1;display:flex;flex-direction:column;gap:16px;width:100%;max-width:340px;}
 
-/* --- escenario 3D --- */
-.mbim2-landing .hero-building-stage{
-  position:relative;
-  width:100%;
-  max-width:380px;
-  height:400px;
-  perspective:1500px;
-  z-index:1;
-}
-.mbim2-landing .hero-building{
-  position:absolute;
-  left:50%;bottom:22%;
-  width:1px;height:1px;
-  transform-style:preserve-3d;
-  transform-origin:center bottom;
-  transform:rotateX(-6deg) rotateY(0deg);
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .hero-building{animation:mbim2-building-spin 30s linear infinite;}
-}
-@keyframes mbim2-building-spin{
-  from{transform:rotateX(-6deg) rotateY(0deg);}
-  to{transform:rotateX(-6deg) rotateY(360deg);}
-}
-
-/* --- volúmenes: caja genérica reutilizable (--bw/--bh/--bd por instancia,
-   inline) — evita duplicar 4 juegos de caras a mano. */
-.mbim2-landing .b3d-box{
-  position:absolute;
-  width:var(--bw);
-  height:var(--bh);
-  transform-style:preserve-3d;
-}
-.mbim2-landing .b3d-face{
-  position:absolute;
-  inset:0;
-  border:1px solid rgba(255,255,255,0.14);
-  background:
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.07) 0 1px, transparent 1px 18px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 1px, transparent 1px 15px),
-    linear-gradient(180deg, color-mix(in oklab, var(--blueprint) 38%, var(--ink)) 0%, var(--ink) 100%);
-}
-.mbim2-landing .b3d-face--front{transform:translateZ(calc(var(--bd) / 2));}
-.mbim2-landing .b3d-face--back{transform:translateZ(calc(var(--bd) / -2)) rotateY(180deg);}
-.mbim2-landing .b3d-face--left{
-  width:var(--bd);height:var(--bh);
-  left:calc((var(--bw) - var(--bd)) / 2);
-  transform:rotateY(-90deg) translateZ(calc(var(--bd) / 2));
-}
-.mbim2-landing .b3d-face--right{
-  width:var(--bd);height:var(--bh);
-  left:calc((var(--bw) - var(--bd)) / 2);
-  transform:rotateY(90deg) translateZ(calc(var(--bd) / 2));
-}
-.mbim2-landing .b3d-face--top{
-  width:var(--bw);height:var(--bd);
-  top:calc((var(--bh) - var(--bd)) / 2);
-  background:color-mix(in oklab, var(--blueprint) 22%, var(--ink));
-  transform:rotateX(90deg) translateZ(calc(var(--bh) / 2));
-}
-/* ala y podio: mismo tratamiento de fachada, más tenues (pedido explícito) */
-.mbim2-landing .b3d-box--dim .b3d-face{opacity:0.72;}
-
-/* mástil + baliza ámbar con pulso continuo */
-.mbim2-landing .hero-mast{
-  position:absolute;
-  left:-1px;
-  width:2px;
-  background:linear-gradient(180deg, rgba(255,255,255,0.55), transparent);
-}
-.mbim2-landing .hero-beacon{
-  position:absolute;
-  left:-3px;
-  width:7px;height:7px;
-  border-radius:50%;
-  background:var(--secondary, #ffba08);
-  box-shadow:0 0 0 0 rgba(255,186,8,0.7);
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .hero-beacon{animation:mbim2-beacon-pulse 1.8s ease-out infinite;}
-}
-@keyframes mbim2-beacon-pulse{
-  0%{box-shadow:0 0 0 0 rgba(255,186,8,0.7);}
-  70%{box-shadow:0 0 0 10px rgba(255,186,8,0);}
-  100%{box-shadow:0 0 0 10px rgba(255,186,8,0);}
-}
-
-/* ventanas iluminadas — se encienden progresivamente al cargar */
-.mbim2-landing .hero-window{
-  position:absolute;
-  width:6px;height:6px;
-  border-radius:1px;
-  background:var(--secondary, #ffba08);
-  box-shadow:0 0 6px 2px rgba(255,186,8,0.75);
-  opacity:0;
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .hero-window{animation:mbim2-window-glow 0.6s ease-out forwards;}
-}
-@media(prefers-reduced-motion:reduce){
-  .mbim2-landing .hero-window{opacity:0.85;}
-}
-@keyframes mbim2-window-glow{to{opacity:0.85;}}
-
-/* suelo: plano rotado 90°, retícula azul con máscara radial */
-.mbim2-landing .hero-building-floor{
-  position:absolute;
-  left:0;top:0;
-  width:520px;height:520px;
-  margin-left:-260px;
-  transform-origin:top center;
-  transform:rotateX(90deg);
-  background-image:
-    linear-gradient(rgba(0,108,255,0.14) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,108,255,0.14) 1px, transparent 1px);
-  background-size:26px 26px;
-  -webkit-mask-image:radial-gradient(circle at center, black 0%, transparent 68%);
-  mask-image:radial-gradient(circle at center, black 0%, transparent 68%);
-  pointer-events:none;
-}
-
-/* --- tarjetas flotantes sobre el edificio ---
-   Inclinación 3D constante (perspective+rotateX/rotateY) + flotación
-   vertical continua; al hover se paran y enderezan. La animación CSS
-   siempre gana sobre un transform inline normal (incluido uno puesto
-   por GSAP), así que la entrada de las tarjetas se anima solo en
-   opacity por GSAP — nunca en transform, para no pelearse con este
-   bucle. animation-fill-mode:backwards hace que, durante el delay
-   inicial, la tarjeta ya muestre la pose de reposo del 0% del keyframe. */
 .mbim2-landing .hero-float-card{
-  position:absolute;
-  width:228px;
-  padding:16px 18px;
-  border-radius:14px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.16);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  color:var(--white);
-  box-shadow:0 20px 44px -20px rgba(0,0,0,0.6);
-  z-index:3;
-  transform:perspective(700px) rotateX(4deg) rotateY(-4deg);
-  transition:transform .35s var(--ease-out-quart, ease);
+  position:relative;padding:20px 22px;border-radius:var(--radius-md);
+  background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  color:var(--white);box-shadow:0 20px 45px -22px rgba(0,0,0,0.55);
+  transition:transform .25s var(--ease-out-quart, ease), box-shadow .25s var(--ease-out-quart, ease);
 }
-@keyframes mbim2-card-float{
-  0%,100%{transform:perspective(700px) rotateX(4deg) rotateY(-4deg) translateY(0);}
-  50%{transform:perspective(700px) rotateX(4deg) rotateY(-4deg) translateY(-8px);}
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .hero-float-card{
-    animation-name:mbim2-card-float;
-    animation-duration:5.5s;
-    animation-timing-function:ease-in-out;
-    animation-iteration-count:infinite;
-    animation-fill-mode:backwards;
-  }
-}
-.mbim2-landing .hero-float-card:hover{
-  animation-name:none;
-  transform:perspective(700px) rotateX(0deg) rotateY(0deg) translateY(-6px);
-}
-@media(prefers-reduced-motion:reduce){
-  .mbim2-landing .hero-float-card{transition:none;}
-}
-.mbim2-landing .hero-card-seats{top:6%;left:0%;}
-.mbim2-landing .hero-card-testimonial{bottom:5%;right:0%;}
-.mbim2-landing .hero-card-contract{bottom:20%;left:0%;}
-@media(max-width:1180px){
-  .mbim2-landing .hero-card-testimonial{right:-2%;}
-}
-@media(max-width:960px){
-  .mbim2-landing .hero-visual-col{padding:88px 20px 40px;flex-direction:column;}
-  .mbim2-landing .hero-building-stage{height:280px;max-width:280px;}
-  .mbim2-landing .hero-float-card{
-    position:relative;
-    width:100%;
-    max-width:340px;
-    margin:0 auto 14px;
-    top:auto;left:auto;right:auto;bottom:auto;
-    transform:none;
-    animation:none;
-  }
-  .mbim2-landing .hero-float-card:hover{transform:none;}
-}
+.mbim2-landing .hero-float-card:hover{transform:translateY(-4px);box-shadow:0 28px 54px -20px rgba(0,0,0,0.6);}
+.mbim2-landing .hero-card-testimonial{background:rgba(0,108,255,0.16);border-color:rgba(0,108,255,0.3);}
+@media(prefers-reduced-motion:reduce){.mbim2-landing .hero-float-card{transition:none;}}
 
 .mbim2-landing .card-badge{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:10.5px;
-  letter-spacing:0.05em;
-  text-transform:uppercase;
-  color:var(--secondary, #ffba08);
-  margin-bottom:10px;
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;letter-spacing:0.05em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:10px;
 }
 .mbim2-landing .card-badge--white{color:rgba(255,255,255,0.75);}
-
-.mbim2-landing .seat-bar-track{
-  position:relative;
-  height:5px;
-  border-radius:999px;
-  background:rgba(255,255,255,0.16);
-  overflow:hidden;
-  margin-bottom:10px;
-}
-/* Por defecto ya dibujada hasta el ratio real (23/30 → 77%, confirmado
-   por el cliente) — si GSAP no llega a cargar, la barra se ve en su
-   estado final desde el primer render, mismo criterio que
-   .summit-progress más abajo en la página. */
-.mbim2-landing .seat-bar-fill{
-  position:absolute;inset:0;
-  border-radius:999px;
-  background:linear-gradient(90deg, var(--secondary, #ffba08), #e11d48);
-  transform-origin:left center;
-  transform:scaleX(0.7667);
-}
+.mbim2-landing .seat-bar-track{position:relative;height:6px;border-radius:999px;background:rgba(255,255,255,0.16);overflow:hidden;margin-bottom:10px;}
+.mbim2-landing .seat-bar-fill{position:absolute;inset:0;border-radius:999px;background:linear-gradient(90deg, var(--amber), #ff7a45);transform-origin:left center;transform:scaleX(0.7667);}
 .mbim2-landing .hero-card-caption{font-size:12.5px;color:rgba(255,255,255,0.72);}
 .mbim2-landing .hero-card-caption b{color:var(--white);font-weight:600;}
-
-.mbim2-landing .hero-card-testimonial .quote{
-  font-size:13.5px;
-  line-height:1.42;
-  color:rgba(255,255,255,0.92);
-  margin-bottom:10px;
-}
+.mbim2-landing .hero-card-testimonial .quote{font-size:14px;line-height:1.45;color:rgba(255,255,255,0.95);margin-bottom:12px;}
 .mbim2-landing .hero-card-testimonial .who{display:flex;align-items:center;gap:9px;}
-.mbim2-landing .hero-card-testimonial .who-avatar{
-  width:26px;height:26px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg, var(--blueprint), #7c3aed);
-}
-.mbim2-landing .hero-card-testimonial .who-meta{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11.5px;
-  color:rgba(255,255,255,0.7);
-}
-
-.mbim2-landing .hero-card-contract p{font-size:13px;line-height:1.4;color:rgba(255,255,255,0.85);margin:2px 0 0;}
+.mbim2-landing .hero-card-testimonial .who-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg, var(--blueprint), var(--blueprint-strong));}
+.mbim2-landing .hero-card-testimonial .who-meta{font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;color:rgba(255,255,255,0.72);}
+.mbim2-landing .hero-card-contract p{font-size:13.5px;line-height:1.4;color:rgba(255,255,255,0.85);margin:2px 0 0;}
 .mbim2-landing .hero-card-contract b{color:var(--white);}
 
 /* ---------- section shell ---------- */
-.mbim2-landing section{
-  padding:88px 0;
-  border-bottom:1px solid var(--line);
-  position:relative;
-}
-.mbim2-landing .section-head{
-  max-width:640px;
-  margin-bottom:52px;
-}
-.mbim2-landing .section-head h2{
-  font-size:clamp(28px,3.4vw,38px);
-  line-height:1.12;
-}
-.mbim2-landing .section-head p{
-  margin-top:16px;
-  font-size:16.5px;
-  color:#3A424B;
-}
-.mbim2-landing .corner-mark{
-  position:absolute;
-  width:14px;
-  height:14px;
-  border-top:1.5px solid var(--line);
-  border-left:1.5px solid var(--line);
-  top:24px;
-  left:32px;
-}
+.mbim2-landing section{padding:100px 0;border-bottom:1px solid var(--line);position:relative;}
+.mbim2-landing .section-head{max-width:640px;margin-bottom:52px;}
+.mbim2-landing .section-head h2{font-size:clamp(28px,3.2vw,38px);line-height:1.15;}
+.mbim2-landing .section-head p{margin-top:16px;font-size:16.5px;color:var(--muted);}
 
-/* ---------- "El Problema" — cabecera + fondo (2026-09-08, rediseño) ---- */
-.mbim2-landing .problema-head{
-  max-width:900px;
-  margin:0 auto 52px;
-  text-align:center;
-}
+/* ---------- El Problema ---------- */
+.mbim2-landing .problema-head{max-width:880px;margin:0 auto 56px;text-align:center;}
 .mbim2-landing .problema-eyebrow{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:14px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11.5px;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:var(--blueprint);
-  margin-bottom:18px;
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--blueprint);margin-bottom:20px;
 }
-.mbim2-landing .problema-eyebrow::before,
-.mbim2-landing .problema-eyebrow::after{
-  content:"";
-  width:26px;
-  height:1px;
-  background:var(--blueprint);
-  opacity:0.5;
-}
+.mbim2-landing .problema-eyebrow::before,.mbim2-landing .problema-eyebrow::after{content:"";width:26px;height:1px;background:var(--blueprint-line);}
 .mbim2-landing .problema-head h2{
-  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
-  font-weight:800;
-  font-size:clamp(30px, 4vw, 46px);
-  line-height:1.08;
-  letter-spacing:-0.02em;
+  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:800;
+  font-size:clamp(30px, 3.6vw, 44px);line-height:1.1;letter-spacing:-0.02em;
 }
-/* "2019" en gris apagado con línea de tachado que se dibuja al entrar en
-   pantalla (por defecto ya trazada — scaleX:1 — para que se vea completa
-   si ScrollTrigger no llega a correr, mismo criterio que .summit-progress
-   más abajo en la página). */
-.mbim2-landing .problema-strike{
-  position:relative;
-  color:var(--dim);
-  display:inline-block;
-}
-/* Elemento real, no ::after — GSAP no puede seleccionar ni animar
-   pseudo-elementos, mismo motivo por el que .summit-progress (más abajo
-   en la página) tampoco lo es. */
-.mbim2-landing .problema-strike-line{
-  position:absolute;
-  left:0;right:0;
-  top:52%;
-  height:3px;
-  background:var(--dim);
-  transform-origin:left center;
-  transform:scaleX(1);
-  pointer-events:none;
-}
-.mbim2-landing .problema-grad{
-  background:linear-gradient(100deg, var(--blueprint) 15%, #7c3aed 90%);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.mbim2-landing .problema-lede{
-  margin:16px auto 0;
-  max-width:620px;
-  font-size:16.5px;
-  line-height:1.65;
-  color:#3A424B;
-  text-align:center;
-}
+.mbim2-landing .problema-strike{position:relative;color:var(--dim);display:inline-block;}
+.mbim2-landing .problema-strike-line{position:absolute;left:0;right:0;top:52%;height:2px;background:var(--dim);transform-origin:left center;transform:scaleX(1);pointer-events:none;}
+.mbim2-landing .problema-grad{color:var(--blueprint);}
+.mbim2-landing .problema-lede{margin:18px auto 0;max-width:600px;font-size:16.5px;line-height:1.65;color:var(--muted);text-align:center;}
+.mbim2-landing .problema-lede-line{overflow:hidden;}
+.mbim2-landing .problema-aura{position:absolute;top:-100px;right:-100px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle, var(--blueprint-soft) 0%, transparent 70%);filter:blur(30px);pointer-events:none;}
 
-/* fondo de la sección: retícula con máscara desde arriba + aura difusa */
-.mbim2-landing .problema-bg-grid{
-  opacity:0.32;
-  -webkit-mask-image:linear-gradient(180deg, black 0%, transparent 85%);
-  mask-image:linear-gradient(180deg, black 0%, transparent 85%);
-}
-.mbim2-landing .problema-aura{
-  position:absolute;
-  top:-120px;right:-120px;
-  width:620px;height:620px;
-  border-radius:50%;
-  background:radial-gradient(circle, color-mix(in oklab, var(--blueprint) 13%, transparent) 0%, transparent 70%);
-  filter:blur(50px);
-  pointer-events:none;
-}
-
-/* ---------- comparativa: grid de 3 columnas, divisor central ---------- */
-.mbim2-landing .compare{
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  align-items:stretch;
-  gap:0;
-}
-.mbim2-landing .compare-divider{
-  position:relative;
-  width:1px;
-  margin:0 34px;
-  background:linear-gradient(180deg, transparent 0%, var(--line) 15%, var(--line) 85%, transparent 100%);
-}
+/* ---------- comparativa ---------- */
+.mbim2-landing .compare{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:0;}
+.mbim2-landing .compare-divider{position:relative;width:1px;margin:0 34px;background:var(--line);}
 .mbim2-landing .compare-divider-pill{
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  white-space:nowrap;
-  background:var(--paper);
-  border:1px solid var(--line);
-  border-radius:100px;
-  padding:6px 14px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:10px;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:#5B6470;
-  box-shadow:0 6px 16px -8px rgba(0,0,0,0.18);
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;
+  background:var(--white);border:1px solid var(--line);border-radius:100px;padding:7px 16px;
+  font-family:var(--font-ibm-plex-mono), monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);box-shadow:var(--shadow-soft-sm);
 }
-
-.mbim2-landing .compare-panel{border-radius:18px;padding:32px;}
-.mbim2-landing .compare-tag{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11px;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
-  margin-bottom:10px;
-}
+.mbim2-landing .compare-panel{border-radius:var(--radius-lg);padding:36px;}
+.mbim2-landing .compare-tag{display:flex;align-items:center;gap:8px;font-family:var(--font-ibm-plex-mono), monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;}
 .mbim2-landing .compare-tag-sq{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
-.mbim2-landing .compare-panel h3{
-  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
-  font-size:21px;
-  font-weight:700;
-  margin-bottom:22px;
-}
-.mbim2-landing .compare-row{
-  position:relative;
-  display:flex;
-  align-items:flex-start;
-  gap:12px;
-  padding:12px 0;
-  font-size:14.4px;
-  transition:transform .25s var(--ease-out-quart, ease);
-}
+.mbim2-landing .compare-panel h3{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-size:22px;font-weight:700;margin-bottom:24px;}
+.mbim2-landing .compare-row{position:relative;display:flex;align-items:flex-start;gap:12px;padding:13px 0;font-size:14.5px;transition:transform .25s var(--ease-out-quart, ease);}
 .mbim2-landing .compare-row:hover{transform:translateX(4px);}
-/* envuelve el texto de cada fila en un único nodo — un <b> como hijo
-   directo de .compare-row (flex) se convertiría en su propio flex-item y
-   partiría el texto en "columnas" en vez de fluir como un párrafo. */
 .mbim2-landing .compare-row-text{flex:1;min-width:0;}
-.mbim2-landing .compare-icon{
-  width:20px;height:20px;
-  border-radius:6px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:11px;
-  line-height:1;
-  flex-shrink:0;
-  margin-top:1px;
-}
+.mbim2-landing .compare-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;flex-shrink:0;margin-top:1px;}
 
-/* --- panel izquierdo: formato heredado, retrocede visualmente --- */
-.mbim2-landing .compare-old{
-  background:rgba(3,7,18,0.025);
-  border:1px solid rgba(3,7,18,0.07);
-  transform:scale(0.97);
-  filter:saturate(0.5);
-}
+.mbim2-landing .compare-old{background:var(--bg-soft);border:1px solid var(--line);}
 .mbim2-landing .compare-old .compare-tag{color:var(--dim);}
-.mbim2-landing .compare-old .compare-tag-sq{background:#B7BCC2;}
+.mbim2-landing .compare-old .compare-tag-sq{background:#c3c9d3;}
 .mbim2-landing .compare-old h3{color:var(--dim);}
-.mbim2-landing .compare-old .compare-row{
-  color:var(--dim);
-  border-bottom:1px solid rgba(3,7,18,0.07);
-}
+.mbim2-landing .compare-old .compare-row{color:var(--muted);border-bottom:1px solid var(--line);}
 .mbim2-landing .compare-old .compare-row:last-child{border-bottom:none;}
-.mbim2-landing .compare-old .compare-icon{background:rgba(3,7,18,0.055);color:var(--dim);}
+.mbim2-landing .compare-old .compare-icon{background:#e3e6ec;color:#8b93a1;}
 
-/* --- panel derecho: MBIM 2.0, protagonista --- */
 .mbim2-landing .compare-new{
-  position:relative;
-  overflow:hidden;
-  background:linear-gradient(150deg, var(--dark-2), var(--ink));
-  border:1px solid rgba(0,108,255,0.22);
-  box-shadow:0 24px 60px rgba(0,108,255,0.22), inset 0 0 0 1px rgba(0,108,255,0.08);
-  color:rgba(255,255,255,0.82);
+  position:relative;overflow:hidden;
+  background:linear-gradient(160deg, var(--ink), color-mix(in oklab, var(--ink) 82%, var(--blueprint) 18%));
+  border:1px solid rgba(0,108,255,0.25);box-shadow:var(--shadow-brand);color:rgba(255,255,255,0.85);
 }
-.mbim2-landing .compare-new::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
-  background-size:26px 26px;
-  pointer-events:none;
-}
-.mbim2-landing .compare-new::after{
-  content:"";
-  position:absolute;
-  top:0;left:0;right:0;
-  height:2px;
-  background:linear-gradient(90deg, var(--blueprint), #7c3aed, var(--secondary, #ffba08), var(--blueprint));
-  background-size:200% 100%;
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .compare-new::after{animation:mbim2-accent-shift 4.5s linear infinite;}
-}
-@keyframes mbim2-accent-shift{
-  from{background-position:0% 0;}
-  to{background-position:200% 0;}
-}
+.mbim2-landing .compare-new::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg, var(--blueprint), var(--amber));}
 .mbim2-landing .compare-new .compare-tag{color:var(--blueprint-light);}
-.mbim2-landing .compare-new .compare-tag-sq{
-  background:var(--blueprint);
-  box-shadow:0 0 10px var(--blueprint);
-}
-.mbim2-landing .compare-new .compare-panel-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:22px;
-}
+.mbim2-landing .compare-new .compare-tag-sq{background:var(--blueprint);}
+.mbim2-landing .compare-new .compare-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
 .mbim2-landing .compare-new h3{color:var(--white);margin-bottom:0;}
-.mbim2-landing .compare-new-badge{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:9.5px;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
-  color:var(--white);
-  background:linear-gradient(100deg, var(--blueprint), #7c3aed);
-  border-radius:100px;
-  padding:5px 11px;
-}
-.mbim2-landing .compare-new .compare-row{
-  border-bottom:1px solid rgba(255,255,255,0.07);
-}
+.mbim2-landing .compare-new-badge{font-family:var(--font-ibm-plex-mono), monospace;font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--white);background:var(--blueprint);border-radius:100px;padding:6px 12px;}
+.mbim2-landing .compare-new .compare-row{border-bottom:1px solid rgba(255,255,255,0.08);}
 .mbim2-landing .compare-new .compare-row:last-child{border-bottom:none;}
 .mbim2-landing .compare-new .compare-row b{color:var(--white);font-weight:600;}
-.mbim2-landing .compare-new .compare-icon{
-  background:linear-gradient(135deg, color-mix(in oklab, var(--blueprint) 35%, transparent), color-mix(in oklab, #7c3aed 30%, transparent));
-  border:1px solid rgba(0,108,255,0.4);
-  color:var(--white);
-}
-/* barra de acento vertical por fila, se dibuja con scaleY 0→1 (GSAP) —
-   por defecto ya trazada, mismo criterio de siempre. */
-.mbim2-landing .compare-row-accent{
-  position:absolute;
-  left:-30px;top:2px;bottom:2px;
-  width:2px;
-  background:linear-gradient(180deg, var(--blueprint), #7c3aed);
-  transform-origin:top center;
-  transform:scaleY(1);
-}
+.mbim2-landing .compare-new .compare-icon{background:rgba(0,108,255,0.25);border:1px solid rgba(0,108,255,0.4);color:var(--white);}
+.mbim2-landing .compare-row-accent{position:absolute;left:-30px;top:2px;bottom:2px;width:2px;background:var(--blueprint);transform-origin:top center;transform:scaleY(1);}
 
 @media(max-width:900px){
   .mbim2-landing .compare{grid-template-columns:1fr;}
   .mbim2-landing .compare-divider{display:none;}
-  .mbim2-landing .compare-old{transform:none;margin-bottom:20px;}
-  .mbim2-landing .problema-head h2{font-size:32px;}
+  .mbim2-landing .compare-old{margin-bottom:20px;}
 }
 
-/* ---------- Metodología (2026-09-08, rediseño) ----------
-   Sustituye por completo el bloque anterior (2 .day-card con borde +
-   .contract-bar con segmentos etiquetados dentro de la barra) — pedido
-   explícito: un único bloque con caja (el contrato), el resto es texto
-   suelto sobre el fondo, sin tarjetas ni iconos decorativos. */
-.mbim2-landing .metodologia-head{
-  max-width:980px;
-  margin-bottom:44px;
-}
+/* ---------- Metodología ---------- */
+.mbim2-landing .metodologia-head{max-width:980px;margin-bottom:48px;}
 .mbim2-landing .metodologia-eyebrow{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11.5px;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  color:var(--blueprint);
-  margin-bottom:18px;
+  display:flex;align-items:center;gap:14px;font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--blueprint);margin-bottom:18px;
 }
-.mbim2-landing .metodologia-eyebrow::before{
-  content:"";
-  width:26px;
-  height:1px;
-  background:var(--blueprint);
-  opacity:0.6;
-}
+.mbim2-landing .metodologia-eyebrow::before{content:"";width:26px;height:1px;background:var(--blueprint-line);}
 .mbim2-landing .metodologia-head h2{
-  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
-  font-weight:800;
-  font-size:clamp(28px, 3.6vw, 43px);
-  line-height:1.08;
-  letter-spacing:-0.02em;
-  max-width:680px;
+  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:800;
+  font-size:clamp(28px, 3.6vw, 43px);line-height:1.08;letter-spacing:-0.02em;max-width:680px;
 }
-.mbim2-landing .metodologia-grad{
-  position:relative;
-  display:inline-block;
-  background:linear-gradient(100deg, var(--blueprint) 15%, #7c3aed 90%);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-/* subrayado real (no ::after) — GSAP no puede animar pseudo-elementos,
-   mismo motivo que .problema-strike-line más arriba en la página. Por
-   defecto ya trazado (scaleX:1) para que se vea completo si ScrollTrigger
-   no llega a correr. */
-.mbim2-landing .metodologia-grad-underline{
-  position:absolute;
-  left:0;right:0;
-  bottom:-4px;
-  height:2px;
-  background:linear-gradient(100deg, var(--blueprint) 15%, #7c3aed 90%);
-  transform-origin:left center;
-  transform:scaleX(1);
-  pointer-events:none;
-}
-.mbim2-landing .metodologia-lede{
-  margin-top:16px;
-  max-width:620px;
-  font-size:16.5px;
-  line-height:1.68;
-  color:#3A424B;
-}
+.mbim2-landing .metodologia-grad{position:relative;display:inline-block;color:var(--blueprint);}
+.mbim2-landing .metodologia-grad-underline{position:absolute;left:0;right:0;bottom:-4px;height:2px;background:var(--blueprint-line);transform-origin:left center;transform:scaleX(1);pointer-events:none;}
+.mbim2-landing .metodologia-lede{margin-top:16px;max-width:620px;font-size:16.5px;line-height:1.68;color:var(--muted);}
 .mbim2-landing .metodologia-lede b{color:var(--ink);font-weight:600;}
 
-.mbim2-landing .metodologia-bg-grid{
-  opacity:0.28;
-  -webkit-mask-image:linear-gradient(180deg, black 0%, transparent 85%);
-  mask-image:linear-gradient(180deg, black 0%, transparent 85%);
-}
-
-/* --- bloque único destacado: el contrato --- */
 .mbim2-landing .contract-block{
-  position:relative;
-  overflow:hidden;
-  border-radius:14px;
-  background:linear-gradient(150deg, var(--dark-2), var(--ink));
-  color:var(--white);
-  padding:38px 40px 34px;
-}
-.mbim2-landing .contract-block::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size:30px 30px;
-  pointer-events:none;
+  position:relative;overflow:hidden;border-radius:var(--radius-lg);
+  background:linear-gradient(150deg, var(--blueprint), var(--blueprint-strong));
+  color:var(--white);padding:44px 48px 40px;box-shadow:var(--shadow-brand);
 }
 .mbim2-landing .contract-block::after{
-  content:"";
-  position:absolute;
-  top:-140px;right:-140px;
-  width:420px;height:420px;
-  border-radius:50%;
-  background:radial-gradient(circle, color-mix(in oklab, var(--blueprint) 20%, transparent) 0%, transparent 62%);
-  pointer-events:none;
+  content:"";position:absolute;top:-140px;right:-120px;width:380px;height:380px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);pointer-events:none;
 }
 .mbim2-landing .contract-block-inner{position:relative;z-index:1;}
-
-.mbim2-landing .contract-block-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  flex-wrap:wrap;
-  gap:20px;
-  margin-bottom:36px;
-}
-.mbim2-landing .contract-tag{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:10.5px;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
-  color:var(--blueprint-light);
-  margin-bottom:12px;
-}
-.mbim2-landing .contract-tag-sq{
-  width:7px;height:7px;
-  border-radius:2px;
-  background:var(--blueprint);
-  box-shadow:0 0 10px var(--blueprint);
-  flex-shrink:0;
-}
-.mbim2-landing .contract-block-title{
-  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
-  font-weight:700;
-  font-size:26px;
-  line-height:1.2;
-  max-width:480px;
-  color:var(--white);
-}
+.mbim2-landing .contract-block-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;margin-bottom:38px;}
+.mbim2-landing .contract-tag{display:flex;align-items:center;gap:8px;font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.78);margin-bottom:14px;}
+.mbim2-landing .contract-tag-sq{width:7px;height:7px;border-radius:2px;background:var(--white);flex-shrink:0;}
+.mbim2-landing .contract-block-title{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:700;font-size:27px;line-height:1.2;max-width:480px;color:var(--white);}
 .mbim2-landing .contract-figure{text-align:right;flex-shrink:0;}
-.mbim2-landing .contract-figure-num{
-  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
-  font-weight:800;
-  font-size:56px;
-  line-height:1;
-  background:linear-gradient(140deg, #fff, #a9b4ff);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.mbim2-landing .contract-figure-label{
-  margin-top:6px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:10.5px;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
-  color:rgba(255,255,255,0.55);
-}
-
-/* línea temporal fina, sin etiquetas dentro de la barra */
-.mbim2-landing .contract-timeline{
-  display:flex;
-  height:6px;
-  border-radius:3px;
-  background:rgba(255,255,255,0.07);
-  overflow:hidden;
-}
-.mbim2-landing .contract-timeline-seg{
-  transform-origin:left center;
-  transform:scaleX(1);
-}
-.mbim2-landing .contract-timeline-seg--work{
-  flex:10;
-  background:linear-gradient(100deg, var(--blueprint), #5470ff);
-}
-.mbim2-landing .contract-timeline-seg--intern{
-  flex:6;
-  background:linear-gradient(100deg, #7c3aed, #9a7bff);
-}
-.mbim2-landing .contract-timeline-labels{
-  display:flex;
-  justify-content:space-between;
-  gap:24px;
-  margin-top:18px;
-  flex-wrap:wrap;
-}
+.mbim2-landing .contract-figure-num{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:800;font-size:58px;line-height:1;color:var(--white);}
+.mbim2-landing .contract-figure-label{margin-top:6px;font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.68);}
+.mbim2-landing .contract-timeline{display:flex;height:8px;border-radius:4px;background:rgba(255,255,255,0.2);overflow:hidden;}
+.mbim2-landing .contract-timeline-seg{transform-origin:left center;transform:scaleX(1);}
+.mbim2-landing .contract-timeline-seg--work{flex:10;background:rgba(255,255,255,0.9);}
+.mbim2-landing .contract-timeline-seg--intern{flex:6;background:var(--amber);}
+.mbim2-landing .contract-timeline-labels{display:flex;justify-content:space-between;gap:24px;margin-top:20px;flex-wrap:wrap;}
 .mbim2-landing .contract-timeline-label{max-width:340px;}
-.mbim2-landing .contract-timeline-label .phase{
-  display:block;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11px;
-  letter-spacing:0.06em;
-  margin-bottom:6px;
-}
-.mbim2-landing .contract-timeline-label--work .phase{color:var(--blueprint-light);}
-.mbim2-landing .contract-timeline-label--intern .phase{color:#c3b3ff;}
-.mbim2-landing .contract-timeline-label p{
-  font-size:14px;
-  line-height:1.5;
-  color:rgba(255,255,255,0.78);
-}
+.mbim2-landing .contract-timeline-label .phase{display:block;font-family:var(--font-ibm-plex-mono), monospace;font-size:11px;letter-spacing:0.06em;margin-bottom:6px;color:rgba(255,255,255,0.72);}
+.mbim2-landing .contract-timeline-label p{font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85);}
 .mbim2-landing .contract-timeline-label p b{color:var(--white);font-weight:600;}
 
-/* --- el día partido: filas, no tarjetas --- */
-.mbim2-landing .day-rows{
-  margin-top:44px;
-  border-top:1px solid rgba(3,7,18,0.09);
-}
-.mbim2-landing .day-row{
-  display:grid;
-  grid-template-columns:120px 1fr;
-  gap:28px;
-  padding:26px 0;
-  border-bottom:1px solid rgba(3,7,18,0.09);
-  transition:padding-left .3s ease;
-}
-.mbim2-landing .day-row:hover{padding-left:8px;}
-.mbim2-landing .day-row-time{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:13px;
-  color:var(--blueprint);
-}
-.mbim2-landing .day-row-body h3{
-  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
-  font-weight:700;
-  font-size:21px;
-}
-.mbim2-landing .day-row-body p{
-  margin-top:8px;
-  max-width:600px;
-  font-size:14.6px;
-  line-height:1.6;
-  color:#3A424B;
-}
+.mbim2-landing .day-rows{margin-top:48px;border-top:1px solid var(--line);}
+.mbim2-landing .day-row{display:grid;grid-template-columns:120px 1fr;gap:28px;padding:28px 0;border-bottom:1px solid var(--line);transition:padding-left .3s ease;}
+.mbim2-landing .day-row:hover{padding-left:10px;}
+.mbim2-landing .day-row-time{font-family:var(--font-ibm-plex-mono), monospace;font-size:13px;color:var(--blueprint);}
+.mbim2-landing .day-row-body h3{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:700;font-size:21px;}
+.mbim2-landing .day-row-body p{margin-top:8px;max-width:600px;font-size:14.6px;line-height:1.6;color:var(--muted);}
 .mbim2-landing .day-row-body p b{color:var(--ink);font-weight:600;}
 
 @media(max-width:820px){
@@ -1330,227 +369,59 @@ const LANDING_STYLES = `
   .mbim2-landing .day-row{grid-template-columns:1fr;gap:8px;}
 }
 
-/* ---------- IA — sección editorial clara (rediseño 2026-09-09) ----------
-   Antes era un bloque .ai-section --ink (negro) con vocabulario mono y
-   retícula técnica — el cliente lo pidió explícitamente "editorial y
-   elegante, NO técnica ni robotizada", y fuera del fondo negro: es la
-   única sección "fría" del sitio (degradado azulado-violeta), no oscura.
-   Reutiliza los tokens de marca ya existentes (--blueprint/--signal/
-   --paper) y el mismo truco de manchas radiales con color-mix() que ya usa
-   .problema-aura, solo que con blur(2px) — mucho más sutil — y en grupo de
-   tres, cada una animada con su propio ritmo. */
-.mbim2-landing .ai-section{
-  position:relative;
-  overflow:hidden;
-  padding:86px 64px 78px;
-  background:linear-gradient(175deg, #fbfaf7 0%, #f2f2f8 48%, #eaeaf6 100%);
-  color:var(--ink);
-  border-bottom:1px solid var(--line);
+/* ---------- CTA de cierre de sección ---------- */
+.mbim2-landing .section-cta-row{margin-top:34px;padding-top:24px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center;}
+.mbim2-landing .section-cta-row p{font-size:14px;color:var(--muted);}
+.mbim2-landing .programa-cta-row{margin-top:28px;padding-top:22px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;text-align:center;}
+.mbim2-landing .programa-cta-row p{font-size:14px;color:var(--muted);}
+.mbim2-landing .programa-cta-link{
+  display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--blueprint);
+  border-bottom:1px solid var(--blueprint-line);padding-bottom:2px;
+  transition:color .2s var(--ease-out-quart, ease), border-color .2s var(--ease-out-quart, ease), gap .2s var(--ease-out-quart, ease);
 }
-.mbim2-landing .ai-section .wrap{padding:0;position:relative;z-index:1;}
+.mbim2-landing .programa-cta-link:hover{color:var(--blueprint-strong);border-color:var(--blueprint-strong);gap:10px;}
 
-/* manchas orgánicas de fondo — decorativas, nunca capturan el puntero */
-.mbim2-landing .ai-blob{
-  position:absolute;
-  border-radius:50%;
-  filter:blur(2px);
-  pointer-events:none;
-  z-index:0;
-}
-.mbim2-landing .ai-blob--1{
-  width:560px;height:560px;
-  right:-170px;top:-210px;
-  /* violeta: mismo #7c3aed ya usado en esta página como acento de IA/
-     prácticas (contract-timeline-seg--intern, problema-grad) */
-  background:radial-gradient(circle, color-mix(in oklab, #7c3aed 16%, transparent) 0%, transparent 70%);
-}
-.mbim2-landing .ai-blob--2{
-  width:460px;height:460px;
-  left:-180px;bottom:-190px;
-  background:radial-gradient(circle, color-mix(in oklab, var(--blueprint) 13%, transparent) 0%, transparent 70%);
-}
-.mbim2-landing .ai-blob--3{
-  width:300px;height:300px;
-  left:44%;top:24%;
-  background:radial-gradient(circle, color-mix(in oklab, var(--paper) 70%, transparent) 0%, transparent 70%);
-}
+/* ---------- IA — editorial ---------- */
+.mbim2-landing .ai-section{position:relative;overflow:hidden;padding:96px 0;background:var(--bg-soft);color:var(--ink);border-bottom:1px solid var(--line);}
+.mbim2-landing .ai-blob{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;z-index:0;opacity:0.6;}
+.mbim2-landing .ai-blob--1{width:480px;height:480px;right:-160px;top:-180px;background:color-mix(in oklab, var(--blueprint) 22%, transparent);}
+.mbim2-landing .ai-blob--2{width:420px;height:420px;left:-160px;bottom:-160px;background:color-mix(in oklab, var(--amber) 20%, transparent);}
+.mbim2-landing .ai-blob--3{display:none;}
 @media(prefers-reduced-motion:no-preference){
   .mbim2-landing .ai-blob--1{animation:mbim2-ai-float-a 19s ease-in-out infinite alternate;}
   .mbim2-landing .ai-blob--2{animation:mbim2-ai-float-b 22s ease-in-out infinite alternate;}
-  .mbim2-landing .ai-blob--3{animation:mbim2-ai-float-a 27s ease-in-out infinite alternate;}
 }
-@keyframes mbim2-ai-float-a{
-  0%{transform:translate(0,0) scale(1);}
-  100%{transform:translate(-24px,20px) scale(1.07);}
-}
-@keyframes mbim2-ai-float-b{
-  0%{transform:translate(0,0) scale(1);}
-  100%{transform:translate(24px,-20px) scale(1.07);}
-}
+@keyframes mbim2-ai-float-a{0%{transform:translate(0,0);}100%{transform:translate(-24px,20px);}}
+@keyframes mbim2-ai-float-b{0%{transform:translate(0,0);}100%{transform:translate(24px,-20px);}}
 
-/* ---------- cabecera ---------- */
-.mbim2-landing .ai-eyebrow{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:12.5px;
-  letter-spacing:0.14em;
-  text-transform:uppercase;
-  font-weight:500;
-  color:color-mix(in oklab, var(--signal) 75%, transparent);
-  margin-bottom:18px;
-}
-.mbim2-landing .ai-eyebrow::before{
-  content:"";
-  width:30px;height:1px;
-  background:color-mix(in oklab, var(--signal) 50%, transparent);
-}
-.mbim2-landing .ai-title{
-  font-weight:700;
-  font-size:50px;
-  line-height:1.06;
-  letter-spacing:-0.025em;
-  max-width:740px;
-  color:var(--ink);
-}
-.mbim2-landing .ai-title em{
-  font-style:italic;
-  font-weight:600;
-  background:linear-gradient(100deg, var(--signal), #7c3aed);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.mbim2-landing .ai-lede{
-  margin-top:20px;
-  max-width:620px;
-  font-size:18px;
-  line-height:1.7;
-  color:#3A424B;
-}
+.mbim2-landing .ai-section .wrap{position:relative;z-index:1;}
+.mbim2-landing .ai-eyebrow{display:flex;align-items:center;gap:12px;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;color:var(--blueprint-strong);margin-bottom:20px;}
+.mbim2-landing .ai-eyebrow::before{content:"";width:30px;height:1px;background:var(--blueprint-line);}
+.mbim2-landing .ai-title{font-weight:700;font-size:clamp(32px,4vw,48px);line-height:1.1;letter-spacing:-0.02em;max-width:740px;color:var(--ink);}
+.mbim2-landing .ai-title em{font-style:normal;font-weight:600;color:var(--blueprint);}
+.mbim2-landing .ai-lede{margin-top:22px;max-width:620px;font-size:18px;line-height:1.7;color:var(--muted);}
 .mbim2-landing .ai-lede b{color:var(--ink);font-weight:600;}
-.mbim2-landing .ai-quote{
-  margin-top:20px;
-  margin-bottom:64px;
-  max-width:560px;
-  padding-left:16px;
-  border-left:2px solid color-mix(in oklab, var(--blueprint) 28%, transparent);
-  font-size:13.5px;
-  font-style:italic;
-  color:var(--dim);
-}
+.mbim2-landing .ai-quote{margin-top:22px;margin-bottom:68px;max-width:560px;padding-left:18px;border-left:2px solid var(--blueprint-line);font-size:14px;font-style:italic;color:var(--dim);}
 
-/* ---------- las 3 capacidades — columnas editoriales, sin tarjetas ---------- */
-.mbim2-landing .ai-capabilities{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:0;
-  margin-bottom:76px;
-}
-.mbim2-landing .ai-cap{
-  position:relative;
-  padding:0 34px;
-}
+.mbim2-landing .ai-capabilities{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:80px;}
+.mbim2-landing .ai-cap{position:relative;padding:0 34px;}
 .mbim2-landing .ai-cap:first-child{padding-left:0;}
 .mbim2-landing .ai-cap:last-child{padding-right:0;}
-.mbim2-landing .ai-cap:not(:first-child)::before{
-  content:"";
-  position:absolute;
-  left:0;top:8px;bottom:8px;
-  width:1px;
-  background:linear-gradient(180deg,
-    transparent,
-    color-mix(in oklab, var(--blueprint) 20%, transparent) 22%,
-    color-mix(in oklab, var(--blueprint) 20%, transparent) 78%,
-    transparent);
-}
-.mbim2-landing .ai-cap-num{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:46px;
-  font-weight:700;
-  line-height:1;
-  margin-bottom:14px;
-  background:linear-gradient(160deg,
-    color-mix(in oklab, var(--blueprint) 90%, transparent),
-    color-mix(in oklab, #7c3aed 35%, transparent));
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.mbim2-landing .ai-cap h3{
-  font-size:20px;
-  font-weight:700;
-  line-height:1.3;
-  margin-bottom:10px;
-  color:var(--ink);
-}
-.mbim2-landing .ai-cap p{
-  font-size:14.6px;
-  line-height:1.65;
-  color:#3A424B;
-}
+.mbim2-landing .ai-cap:not(:first-child)::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:1px;background:var(--line);}
+.mbim2-landing .ai-cap-num{font-family:var(--font-space-grotesk), sans-serif;font-size:44px;font-weight:700;line-height:1;margin-bottom:16px;color:var(--blueprint);opacity:0.85;}
+.mbim2-landing .ai-cap h3{font-size:20px;font-weight:700;line-height:1.3;margin-bottom:10px;color:var(--ink);}
+.mbim2-landing .ai-cap p{font-size:14.6px;line-height:1.65;color:var(--muted);}
 
-/* ---------- cabecera del toolkit ---------- */
-.mbim2-landing .ai-toolkit-head{
-  display:flex;
-  align-items:baseline;
-  gap:16px;
-  margin-bottom:34px;
-}
-.mbim2-landing .ai-toolkit-head h3{
-  font-size:24px;
-  font-weight:700;
-  white-space:nowrap;
-  color:var(--ink);
-}
-.mbim2-landing .ai-toolkit-line{
-  flex:1;
-  height:1px;
-  background:linear-gradient(90deg, color-mix(in oklab, var(--blueprint) 28%, transparent), transparent);
-}
-
-/* ---------- el toolkit — 4 columnas, sin cajas ---------- */
-.mbim2-landing .ai-toolwall{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:40px 34px;
-}
-.mbim2-landing .ai-toolcol-label{
-  position:relative;
-  display:block;
-  padding-bottom:12px;
-  margin-bottom:16px;
-  font-size:11.5px;
-  letter-spacing:0.12em;
-  text-transform:uppercase;
-  font-weight:500;
-  color:color-mix(in oklab, var(--signal) 70%, transparent);
-}
-.mbim2-landing .ai-toolcol-underline{
-  position:absolute;
-  left:0;bottom:0;
-  width:100%;height:2px;
-  background:linear-gradient(90deg, var(--blueprint), color-mix(in oklab, #7c3aed 15%, transparent));
-  /* ya trazado por defecto (scaleX:1) — si GSAP no llega a cargar
-     (movimiento reducido), el subrayado se ve completo desde el primer
-     render, mismo criterio que .summit-progress/.step-accent. */
-  transform:scaleX(1);
-  transform-origin:left center;
-}
+.mbim2-landing .ai-toolkit-head{display:flex;align-items:baseline;gap:16px;margin-bottom:36px;}
+.mbim2-landing .ai-toolkit-head h3{font-size:23px;font-weight:700;white-space:nowrap;color:var(--ink);}
+.mbim2-landing .ai-toolkit-line{flex:1;height:1px;background:var(--line);}
+.mbim2-landing .ai-toolwall{display:grid;grid-template-columns:repeat(4,1fr);gap:40px 34px;}
+.mbim2-landing .ai-toolcol-label{position:relative;display:block;padding-bottom:12px;margin-bottom:16px;font-size:11.5px;letter-spacing:0.12em;text-transform:uppercase;font-weight:500;color:var(--blueprint-strong);}
+.mbim2-landing .ai-toolcol-underline{position:absolute;left:0;bottom:0;width:100%;height:2px;background:var(--blueprint-line);transform:scaleX(1);transform-origin:left center;}
 .mbim2-landing .ai-toolcol ul{list-style:none;margin:0;padding:0;}
-.mbim2-landing .ai-toolcol li{
-  font-size:14.4px;
-  line-height:1.55;
-  padding:11px 0;
-  border-bottom:1px solid color-mix(in oklab, var(--blueprint) 9%, transparent);
-  color:#3A424B;
-  transition:color .25s ease, padding-left .25s ease;
-}
+.mbim2-landing .ai-toolcol li{font-size:14.4px;line-height:1.55;padding:11px 0;border-bottom:1px solid var(--line);color:var(--muted);transition:color .25s ease, padding-left .25s ease;}
 .mbim2-landing .ai-toolcol li:last-child{border-bottom:none;}
-.mbim2-landing .ai-toolcol li:hover{
-  color:var(--signal);
-  padding-left:6px;
-}
+.mbim2-landing .ai-toolcol li:hover{color:var(--blueprint-strong);padding-left:6px;}
 .mbim2-landing .ai-toolcol li b{color:var(--ink);font-weight:600;}
 
 @media(max-width:980px){
@@ -1560,307 +431,62 @@ const LANDING_STYLES = `
   .mbim2-landing .ai-toolwall{grid-template-columns:repeat(2,1fr);}
 }
 @media(max-width:640px){
-  .mbim2-landing .ai-section{padding:60px 28px 56px;}
-  .mbim2-landing .ai-title{font-size:33px;}
+  .mbim2-landing .ai-section{padding:64px 0;}
+  .mbim2-landing .ai-title{font-size:32px;}
   .mbim2-landing .ai-toolwall{grid-template-columns:1fr;}
 }
 
-/* ---------- Programa — mapa visual, sin acordeón (rediseño 2026-09-09) ----
-   Antes era una lista de 9 filas plegables (acordeón + botón "+" + caja
-   blanca contenedora) — el cliente lo pidió explícitamente fuera: todo el
-   temario a la vista de golpe, como un mapa, con el módulo de IA (07)
-   destacado como pieza diferencial en vez de ser una fila más. */
-.mbim2-landing .programa-bg-grid{
-  opacity:0.28;
-  -webkit-mask-image:radial-gradient(ellipse 75% 60% at 50% 0%, black 0%, transparent 78%);
-  mask-image:radial-gradient(ellipse 75% 60% at 50% 0%, black 0%, transparent 78%);
-}
+/* ---------- Programa ---------- */
+.mbim2-landing .programa-eyebrow{display:flex;align-items:center;gap:12px;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;color:var(--blueprint-strong);margin-bottom:20px;}
+.mbim2-landing .programa-eyebrow::before{content:"";width:30px;height:1px;background:var(--blueprint-line);}
+.mbim2-landing .programa-title{font-weight:700;font-size:clamp(30px,3.6vw,44px);line-height:1.12;letter-spacing:-0.022em;max-width:720px;color:var(--ink);}
+.mbim2-landing .programa-title-accent{color:var(--blueprint);}
+.mbim2-landing .programa-lede{margin-top:20px;margin-bottom:46px;max-width:600px;font-size:16.5px;line-height:1.68;color:var(--muted);}
 
-.mbim2-landing .programa-eyebrow{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:12.5px;
-  letter-spacing:0.14em;
-  text-transform:uppercase;
-  font-weight:500;
-  color:color-mix(in oklab, var(--signal) 78%, transparent);
-  margin-bottom:18px;
-}
-.mbim2-landing .programa-eyebrow::before{
-  content:"";
-  width:30px;height:1px;
-  background:color-mix(in oklab, var(--signal) 50%, transparent);
-}
-.mbim2-landing .programa-title{
-  font-weight:700;
-  font-size:44px;
-  line-height:1.07;
-  letter-spacing:-0.022em;
-  max-width:720px;
-  color:var(--ink);
-}
-.mbim2-landing .programa-title-accent{
-  background:linear-gradient(100deg, var(--signal), #7c3aed);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.mbim2-landing .programa-lede{
-  margin-top:20px;
-  margin-bottom:46px;
-  max-width:600px;
-  font-size:16.5px;
-  line-height:1.68;
-  color:#3A424B;
-}
-
-/* ---------- rail de 4 fases ---------- */
-.mbim2-landing .programa-rail{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:0;
-  margin-bottom:16px;
-}
+.mbim2-landing .programa-rail{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-bottom:16px;}
 .mbim2-landing .programa-phase{padding-right:20px;}
-.mbim2-landing .programa-phase-label{
-  font-size:11px;
-  letter-spacing:0.11em;
-  text-transform:uppercase;
-  font-weight:500;
-  color:var(--dim);
-  margin-bottom:10px;
-}
-.mbim2-landing .programa-phase-bar{
-  height:3px;
-  border-radius:2px;
-  /* ya trazada por defecto (scaleX:1) — si GSAP no llega a cargar
-     (movimiento reducido), se ve completa desde el primer render, mismo
-     criterio que .summit-progress/.step-accent. */
-  transform:scaleX(1);
-  transform-origin:left center;
-}
-.mbim2-landing .programa-rail .programa-phase:nth-child(1) .programa-phase-bar{background:linear-gradient(90deg, #7fa0ff, #5470ff);}
-.mbim2-landing .programa-rail .programa-phase:nth-child(2) .programa-phase-bar{background:linear-gradient(90deg, #5470ff, var(--blueprint));}
-.mbim2-landing .programa-rail .programa-phase:nth-child(3) .programa-phase-bar{background:linear-gradient(90deg, var(--blueprint), #7c3aed);}
-.mbim2-landing .programa-rail .programa-phase:nth-child(4) .programa-phase-bar{background:linear-gradient(90deg, #7c3aed, #b9a4ff);}
+.mbim2-landing .programa-phase-label{font-size:11px;letter-spacing:0.11em;text-transform:uppercase;font-weight:500;color:var(--dim);margin-bottom:10px;}
+.mbim2-landing .programa-phase-bar{height:3px;border-radius:2px;transform:scaleX(1);transform-origin:left center;background:var(--blueprint-line);}
+.mbim2-landing .programa-rail .programa-phase:nth-child(1) .programa-phase-bar,
+.mbim2-landing .programa-rail .programa-phase:nth-child(2) .programa-phase-bar,
+.mbim2-landing .programa-rail .programa-phase:nth-child(3) .programa-phase-bar{background:var(--blueprint);}
+.mbim2-landing .programa-rail .programa-phase:nth-child(4) .programa-phase-bar{background:var(--amber);}
 
-/* ---------- grid de 9 módulos ---------- */
-.mbim2-landing .programa-grid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-}
+.mbim2-landing .programa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
 .mbim2-landing .programa-card{
-  position:relative;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  min-height:150px;
-  padding:20px 20px 18px;
-  border-radius:14px;
-  background:color-mix(in oklab, var(--white) 62%, transparent);
-  backdrop-filter:blur(8px);
-  border:1px solid rgba(3,7,18,0.08);
-  transition:
-    transform .3s var(--ease-out-quart, ease),
-    box-shadow .3s var(--ease-out-quart, ease),
-    border-color .3s var(--ease-out-quart, ease);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:150px;padding:22px 22px 20px;
+  border-radius:var(--radius-md);background:var(--white);border:1px solid var(--line);box-shadow:var(--shadow-soft-sm);
+  transition:transform .3s var(--ease-out-quart, ease), box-shadow .3s var(--ease-out-quart, ease), border-color .3s var(--ease-out-quart, ease);
 }
-.mbim2-landing .programa-card-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:12px;
-}
-.mbim2-landing .programa-card-idx{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11px;
-  color:var(--blueprint);
-}
-.mbim2-landing .programa-card-ects{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:10.5px;
-  color:var(--blueprint);
-  background:color-mix(in oklab, var(--blueprint) 10%, transparent);
-  border:1px solid color-mix(in oklab, var(--blueprint) 18%, transparent);
-  padding:3px 8px;
-  border-radius:5px;
-}
-.mbim2-landing .programa-card h3{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-weight:700;
-  font-size:16px;
-  line-height:1.32;
-}
-.mbim2-landing .programa-card-subtitle{
-  margin-top:4px;
-  font-size:12.5px;
-  color:var(--dim);
-}
-.mbim2-landing .programa-card-hours{
-  margin-top:auto;
-  padding-top:12px;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11px;
-  color:#B7BEC7;
-}
+.mbim2-landing .programa-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.mbim2-landing .programa-card-idx{font-family:var(--font-ibm-plex-mono), monospace;font-size:11px;color:var(--blueprint);}
+.mbim2-landing .programa-card-ects{font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;color:var(--blueprint-strong);background:var(--blueprint-soft);border:1px solid var(--blueprint-line);padding:3px 9px;border-radius:6px;}
+.mbim2-landing .programa-card h3{font-family:var(--font-space-grotesk), sans-serif;font-weight:700;font-size:16px;line-height:1.32;}
+.mbim2-landing .programa-card-subtitle{margin-top:4px;font-size:12.5px;color:var(--dim);}
+.mbim2-landing .programa-card-hours{margin-top:auto;padding-top:12px;font-family:var(--font-ibm-plex-mono), monospace;font-size:11px;color:var(--dim);}
 .mbim2-landing .programa-card-num{
-  position:absolute;
-  right:12px;bottom:2px;
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:62px;
-  font-weight:800;
-  line-height:1;
-  color:color-mix(in oklab, var(--blueprint) 7%, transparent);
-  pointer-events:none;
-  transition:color .3s var(--ease-out-quart, ease), transform .3s var(--ease-out-quart, ease);
+  position:absolute;right:14px;bottom:0;font-family:var(--font-space-grotesk), sans-serif;font-size:60px;font-weight:800;line-height:1;
+  color:var(--blueprint-soft);pointer-events:none;transition:transform .3s var(--ease-out-quart, ease);
 }
-.mbim2-landing .programa-card:hover{
-  transform:translateY(-5px);
-  /* rgba(0,108,255,…) = var(--color-brand) en rgb — mismo patrón ya usado
-     en .kicker-dot para un box-shadow con color de marca. */
-  box-shadow:0 16px 38px rgba(0,108,255,0.14);
-  border-color:color-mix(in oklab, var(--blueprint) 30%, transparent);
-}
-.mbim2-landing .programa-card:hover .programa-card-num{
-  color:color-mix(in oklab, var(--blueprint) 13%, transparent);
-  transform:translateY(-3px);
-}
+.mbim2-landing .programa-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-soft);border-color:var(--blueprint-line);}
+.mbim2-landing .programa-card:hover .programa-card-num{transform:translateY(-3px);}
 
-/* --- tarjeta destacada: módulo 07, IA Aplicada al Sector AEC --- */
-.mbim2-landing .programa-card--flagship{
-  grid-column:span 2;
-  background:linear-gradient(150deg, #151822, #0c0e14);
-  color:var(--white);
-  border-color:rgba(0,108,255,0.28);
-  box-shadow:0 20px 50px rgba(0,108,255,0.2);
-}
-.mbim2-landing .programa-card--flagship::before{
-  content:"";
-  position:absolute;
-  top:0;left:0;right:0;
-  height:2px;
-  /* mismo degradado + keyframe que .compare-new::after (bloque de la
-     comparativa MBIM 2.0) — no se redefine el keyframe, se reutiliza
-     mbim2-accent-shift tal cual. */
-  background:linear-gradient(90deg, var(--blueprint), #7c3aed, var(--secondary, #ffba08), var(--blueprint));
-  background-size:200% 100%;
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .programa-card--flagship::before{animation:mbim2-accent-shift 4.5s linear infinite;}
-}
-.mbim2-landing .programa-card--flagship::after{
-  content:"";
-  position:absolute;
-  top:-60px;right:-60px;
-  width:280px;height:280px;
-  border-radius:50%;
-  background:radial-gradient(circle, color-mix(in oklab, #7c3aed 30%, transparent) 0%, transparent 70%);
-  pointer-events:none;
-}
-.mbim2-landing .programa-flagship-badge{
-  align-self:flex-start;
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:9px;
-  letter-spacing:0.09em;
-  text-transform:uppercase;
-  padding:4px 9px;
-  border-radius:5px;
-  background:linear-gradient(100deg, var(--blueprint), #7c3aed);
-  color:var(--white);
-  margin-bottom:12px;
-}
+.mbim2-landing .programa-card--flagship{grid-column:span 2;background:linear-gradient(150deg, var(--blueprint), var(--blueprint-strong));color:var(--white);border-color:transparent;box-shadow:var(--shadow-brand);}
+.mbim2-landing .programa-flagship-badge{align-self:flex-start;font-family:var(--font-ibm-plex-mono), monospace;font-size:9px;letter-spacing:0.09em;text-transform:uppercase;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.16);color:var(--white);margin-bottom:12px;}
 .mbim2-landing .programa-card--flagship .programa-card-idx,
-.mbim2-landing .programa-card--flagship .programa-card-hours{color:rgba(255,255,255,0.55);}
-.mbim2-landing .programa-card--flagship .programa-card-ects{
-  color:var(--blueprint-light);
-  background:rgba(255,255,255,0.08);
-  border-color:rgba(255,255,255,0.22);
-}
+.mbim2-landing .programa-card--flagship .programa-card-hours{color:rgba(255,255,255,0.65);}
+.mbim2-landing .programa-card--flagship .programa-card-ects{color:var(--white);background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.28);}
 .mbim2-landing .programa-card--flagship h3{font-size:20px;color:var(--white);}
-.mbim2-landing .programa-card--flagship .programa-card-subtitle{color:rgba(255,255,255,0.68);}
-.mbim2-landing .programa-card--flagship .programa-card-num{color:rgba(255,255,255,0.06);}
-.mbim2-landing .programa-card--flagship:hover{
-  box-shadow:0 26px 60px rgba(0,108,255,0.28);
-  border-color:rgba(0,108,255,0.4);
-}
-.mbim2-landing .programa-card--flagship:hover .programa-card-num{color:rgba(255,255,255,0.1);}
+.mbim2-landing .programa-card--flagship .programa-card-subtitle{color:rgba(255,255,255,0.75);}
+.mbim2-landing .programa-card--flagship .programa-card-num{color:rgba(255,255,255,0.14);}
+.mbim2-landing .programa-card--flagship:hover{box-shadow:0 30px 60px -20px rgba(0,108,255,0.5);}
 
-/* ---------- franja inferior: total + reparto ---------- */
-.mbim2-landing .programa-summary{
-  margin-top:22px;
-  padding-top:20px;
-  border-top:1px solid rgba(3,7,18,0.09);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:16px;
-}
-.mbim2-landing .programa-summary-total{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:15px;
-  color:var(--ink);
-}
-.mbim2-landing .programa-summary-total b{
-  font-size:26px;
-  font-weight:700;
-}
-.mbim2-landing .programa-summary-breakdown{
-  display:flex;
-  flex-wrap:wrap;
-  gap:22px;
-}
-.mbim2-landing .programa-summary-item{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-size:12.5px;
-  color:#3A424B;
-}
-.mbim2-landing .programa-summary-dot{
-  width:9px;height:9px;
-  border-radius:3px;
-  flex-shrink:0;
-}
-
-/* CTA secundario tras el mapa de módulos — enlace real a Calendly
-   (/contact-page?motivo=asesoria), no un botón pesado: aquí el visitante
-   ya ha visto el temario completo, así que basta una salida discreta para
-   quien prefiere que se lo expliquen antes de decidir. 2026-09-09. */
-.mbim2-landing .programa-cta-row{
-  margin-top:28px;
-  padding-top:22px;
-  border-top:1px solid rgba(3,7,18,0.09);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-  text-align:center;
-}
-.mbim2-landing .programa-cta-row p{
-  font-size:14px;
-  color:#3A424B;
-}
-.mbim2-landing .programa-cta-link{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  font-size:14px;
-  font-weight:600;
-  color:var(--blueprint);
-  text-decoration:none;
-  border-bottom:1px solid color-mix(in oklab, var(--blueprint) 30%, transparent);
-  padding-bottom:2px;
-  transition:color .2s var(--ease-out-quart, ease), border-color .2s var(--ease-out-quart, ease), gap .2s var(--ease-out-quart, ease);
-}
-.mbim2-landing .programa-cta-link:hover{
-  color:var(--signal);
-  border-color:var(--signal);
-  gap:10px;
-}
+.mbim2-landing .programa-summary{margin-top:22px;padding-top:20px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+.mbim2-landing .programa-summary-total{font-family:var(--font-space-grotesk), sans-serif;font-size:15px;color:var(--ink);}
+.mbim2-landing .programa-summary-total b{font-size:26px;font-weight:700;}
+.mbim2-landing .programa-summary-breakdown{display:flex;flex-wrap:wrap;gap:22px;}
+.mbim2-landing .programa-summary-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);}
+.mbim2-landing .programa-summary-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
 
 @media(max-width:980px){
   .mbim2-landing .programa-grid{grid-template-columns:repeat(2,1fr);}
@@ -1873,631 +499,146 @@ const LANDING_STYLES = `
   .mbim2-landing .programa-rail{grid-template-columns:1fr;}
 }
 
-/* ---------- Secciones 6-11 — puestas al día de estética (2026-09-09) ----
-   Antes eran rejillas planas con divisores en línea fina (borde + fondo de
-   1px imitando líneas) — el mismo lenguaje "documento técnico" con el que
-   arrancó esta página, pero ya superado por el tratamiento de las
-   secciones más recientes (Programa, IA): tarjeta de cristal con blur,
-   radio de 14px, elevación al hover y números decorativos de fondo.
-   .glass-card y .editorial-eyebrow son la base compartida que ponen estas
-   6 secciones al mismo nivel, sin reescribir .programa-card (que ya tenía
-   exactamente esta receta) ni las tres secciones anteriores (que ya
-   tienen su propio eyebrow — .kicker-pill, .problema-eyebrow,
-   .metodologia-eyebrow, con la misma altura visual). */
-.mbim2-landing .editorial-eyebrow{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:12.5px;
-  letter-spacing:0.14em;
-  text-transform:uppercase;
-  font-weight:500;
-  color:color-mix(in oklab, var(--signal) 76%, transparent);
-  margin-bottom:18px;
-}
-.mbim2-landing .editorial-eyebrow::before{
-  content:"";
-  width:30px;height:1px;
-  background:color-mix(in oklab, var(--signal) 50%, transparent);
-}
+/* ---------- Secciones 6-11: base compartida ---------- */
+.mbim2-landing .editorial-eyebrow{display:flex;align-items:center;gap:12px;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;color:var(--blueprint-strong);margin-bottom:18px;}
+.mbim2-landing .editorial-eyebrow::before{content:"";width:30px;height:1px;background:var(--blueprint-line);}
 
 .mbim2-landing .glass-card{
-  position:relative;
-  overflow:hidden;
-  border-radius:14px;
-  background:color-mix(in oklab, var(--white) 62%, transparent);
-  backdrop-filter:blur(8px);
-  border:1px solid rgba(3,7,18,0.08);
-  transition:
-    transform .3s var(--ease-out-quart, ease),
-    box-shadow .3s var(--ease-out-quart, ease),
-    border-color .3s var(--ease-out-quart, ease);
+  position:relative;overflow:hidden;border-radius:var(--radius-md);background:var(--white);border:1px solid var(--line);box-shadow:var(--shadow-soft-sm);
+  transition:transform .3s var(--ease-out-quart, ease), box-shadow .3s var(--ease-out-quart, ease), border-color .3s var(--ease-out-quart, ease);
 }
-.mbim2-landing .glass-card:hover{
-  transform:translateY(-5px);
-  /* rgba(0,108,255,…) = var(--color-brand) en rgb, mismo patrón que
-     .programa-card:hover y .kicker-dot. */
-  box-shadow:0 16px 38px rgba(0,108,255,0.14);
-  border-color:color-mix(in oklab, var(--blueprint) 30%, transparent);
-}
+.mbim2-landing .glass-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-soft);border-color:var(--blueprint-line);}
 
-/* ---------- credentials ---------- */
-.mbim2-landing .cred-stack{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-}
-.mbim2-landing .cred-card{
-  padding:28px 26px 26px;
-}
-.mbim2-landing .cred-card .layer{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11.5px;
-  color:var(--blueprint);
-  letter-spacing:0.05em;
-  text-transform:uppercase;
-}
-.mbim2-landing .cred-card h3{
-  font-size:20px;
-  margin-top:10px;
-  margin-bottom:14px;
-}
-.mbim2-landing .cred-card p{
-  font-size:14.5px;
-  color:#3A424B;
-}
-.mbim2-landing .cred-card-num{
-  position:absolute;
-  right:14px;bottom:4px;
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:56px;
-  font-weight:800;
-  line-height:1;
-  color:color-mix(in oklab, var(--blueprint) 7%, transparent);
-  pointer-events:none;
-}
-@media(max-width:820px){
-  .mbim2-landing .cred-stack{grid-template-columns:1fr;}
-}
+/* ---------- certificación ---------- */
+.mbim2-landing .cred-stack{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.mbim2-landing .cred-card{padding:30px 28px 28px;}
+.mbim2-landing .cred-card .layer{font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;color:var(--blueprint);letter-spacing:0.05em;text-transform:uppercase;}
+.mbim2-landing .cred-card h3{font-size:20px;margin-top:10px;margin-bottom:14px;}
+.mbim2-landing .cred-card p{font-size:14.5px;color:var(--muted);}
+.mbim2-landing .cred-card-num{position:absolute;right:16px;bottom:4px;font-family:var(--font-space-grotesk), sans-serif;font-size:56px;font-weight:800;line-height:1;color:var(--blueprint-soft);pointer-events:none;}
+@media(max-width:820px){.mbim2-landing .cred-stack{grid-template-columns:1fr;}}
 
-.mbim2-landing .profiles{
-  margin-top:36px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-}
+.mbim2-landing .profiles{margin-top:36px;display:flex;flex-wrap:wrap;gap:10px;}
 .mbim2-landing .profile{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:9px 16px;
-  border-radius:999px;
-  background:color-mix(in oklab, var(--white) 70%, transparent);
-  backdrop-filter:blur(6px);
-  border:1px solid rgba(3,7,18,0.08);
-  font-size:13px;
-  color:var(--ink);
-  transition:border-color .25s var(--ease-out-quart, ease), background .25s var(--ease-out-quart, ease), transform .25s var(--ease-out-quart, ease);
+  display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--white);border:1px solid var(--line);
+  font-size:13px;color:var(--ink);transition:border-color .25s var(--ease-out-quart, ease), background .25s var(--ease-out-quart, ease), transform .25s var(--ease-out-quart, ease);
 }
-.mbim2-landing .profile:hover{
-  border-color:color-mix(in oklab, var(--blueprint) 30%, transparent);
-  background:color-mix(in oklab, var(--blueprint) 6%, var(--white));
-  transform:translateY(-2px);
-}
-.mbim2-landing .profile .tag{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:10px;
-  color:var(--signal);
-  letter-spacing:0.03em;
-}
+.mbim2-landing .profile:hover{border-color:var(--blueprint-line);background:var(--blueprint-soft);transform:translateY(-2px);}
+.mbim2-landing .profile .tag{font-family:var(--font-ibm-plex-mono), monospace;font-size:10px;color:var(--blueprint-strong);letter-spacing:0.03em;}
 
-/* ---------- innovation summit timeline ---------- */
-.mbim2-landing .summit-line{
-  position:relative;
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-}
-.mbim2-landing .summit-line::before{
-  content:"";
-  position:absolute;
-  top:11px;left:0;right:0;
-  height:1px;
-  background:var(--line);
-}
-.mbim2-landing .summit-card{position:relative;padding:36px 20px 24px;}
-.mbim2-landing .summit-card .dot{
-  position:absolute;top:6px;left:20px;
-  width:11px;height:11px;
-  border-radius:50%;
-  background:var(--signal);
-  border:2px solid var(--paper);
-}
-.mbim2-landing .summit-card .month{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:12px;
-  color:#5B6470;
-}
-.mbim2-landing .summit-card h4{
-  font-size:16.5px;
-  margin-top:8px;
-  margin-bottom:8px;
-}
-.mbim2-landing .summit-card p{font-size:13.5px;color:#3A424B;}
+/* ---------- innovation summit ---------- */
+.mbim2-landing .summit-line{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.mbim2-landing .summit-line::before{content:"";position:absolute;top:11px;left:0;right:0;height:1px;background:var(--line);}
+.mbim2-landing .summit-card{position:relative;padding:38px 22px 26px;}
+.mbim2-landing .summit-card .dot{position:absolute;top:6px;left:22px;width:11px;height:11px;border-radius:50%;background:var(--blueprint);border:2px solid var(--white);box-shadow:0 0 0 1px var(--line);}
+.mbim2-landing .summit-card .month{font-family:var(--font-ibm-plex-mono), monospace;font-size:12px;color:var(--muted);}
+.mbim2-landing .summit-card h4{font-size:16.5px;margin-top:8px;margin-bottom:8px;}
+.mbim2-landing .summit-card p{font-size:13.5px;color:var(--muted);}
+.mbim2-landing .summit-progress{position:absolute;top:11px;left:0;right:0;height:1px;background:var(--blueprint);transform-origin:left center;transform:scaleX(1);pointer-events:none;}
 @media(max-width:820px){
   .mbim2-landing .summit-line{grid-template-columns:1fr;gap:16px;}
-  .mbim2-landing .summit-line::before{display:none;}
+  .mbim2-landing .summit-line::before,.mbim2-landing .summit-progress{display:none;}
 }
 
-/* ---------- talent / outcomes ---------- */
-.mbim2-landing .outcomes{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-}
-.mbim2-landing .outcome{
-  padding:24px 22px 22px;
-}
-.mbim2-landing .outcome .n{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:32px;
-  font-weight:700;
-  /* mismo degradado azul→violeta que .programa-title-accent/.ai-cap-num —
-     eco deliberado, no un tercer degradado inventado. */
-  background:linear-gradient(160deg, color-mix(in oklab, var(--blueprint) 90%, transparent), color-mix(in oklab, #7c3aed 35%, transparent));
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.mbim2-landing .outcome p{font-size:14px;color:#3A424B;margin-top:8px;}
+/* ---------- resultados ---------- */
+.mbim2-landing .outcomes{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.mbim2-landing .outcome{padding:26px 24px 24px;}
+.mbim2-landing .outcome .n{font-family:var(--font-space-grotesk), sans-serif;font-size:32px;font-weight:700;color:var(--blueprint);}
+.mbim2-landing .outcome p{font-size:14px;color:var(--muted);margin-top:8px;}
 @media(max-width:760px){.mbim2-landing .outcomes{grid-template-columns:repeat(2,1fr);}}
 
-/* ---------- testimonials (2026-09-15, vídeos reales) ----------
-   Una única comilla gigante de fondo ancla la sección entera (recurso ya
-   usado en la landing anterior para esta misma sección) — sustituye a la
-   comilla pequeña por tarjeta que había antes; la cita ya lleva sus propias
-   comillas tipográficas en el texto. */
+/* ---------- testimonios ---------- */
 #testimonios{position:relative;overflow:hidden;}
 .mbim2-landing #testimonios .wrap{position:relative;z-index:1;}
 .mbim2-landing .testimonials-quote-mark{
-  position:absolute;
-  top:-0.12em;
-  left:50%;
-  transform:translateX(-50%);
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-size:clamp(220px,26vw,340px);
-  font-weight:800;
-  line-height:1;
-  color:var(--blueprint);
-  opacity:0.07;
-  pointer-events:none;
-  user-select:none;
-  z-index:0;
+  position:absolute;top:-0.12em;left:50%;transform:translateX(-50%);
+  font-family:var(--font-space-grotesk), sans-serif;font-size:clamp(220px,26vw,340px);font-weight:800;line-height:1;
+  color:var(--blueprint);opacity:0.05;pointer-events:none;user-select:none;z-index:0;
 }
-.mbim2-landing .testimonials{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:20px;
-  position:relative;
-  z-index:1;
+.mbim2-landing .testimonials{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;position:relative;z-index:1;}
+.mbim2-landing .testimonial{display:flex;flex-direction:column;padding:0;}
+.mbim2-landing .testimonial-video-frame{position:relative;width:100%;aspect-ratio:9/16;background:var(--ink);overflow:hidden;}
+.mbim2-landing .testimonial-video{display:block;width:100%;height:100%;object-fit:cover;}
+.mbim2-landing .testimonial-mute-btn,.mbim2-landing .testimonial-play-btn{
+  position:absolute;display:flex;align-items:center;justify-content:center;border:none;padding:0;cursor:pointer;color:var(--white);
+  background:rgba(10,14,20,0.6);backdrop-filter:blur(6px);border-radius:50%;transition:background .2s var(--ease-out-quart, ease), transform .2s var(--ease-out-quart, ease);
 }
-.mbim2-landing .testimonial{
-  display:flex;
-  flex-direction:column;
-  padding:0;
-}
-.mbim2-landing .testimonial-video-frame{
-  position:relative;
-  width:100%;
-  aspect-ratio:9/16;
-  background:var(--ink);
-  overflow:hidden;
-}
-.mbim2-landing .testimonial-video{
-  display:block;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-.mbim2-landing .testimonial-mute-btn,
-.mbim2-landing .testimonial-play-btn{
-  position:absolute;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border:none;
-  padding:0;
-  cursor:pointer;
-  color:var(--white);
-  background:rgba(3,7,18,0.62);
-  backdrop-filter:blur(6px);
-  border-radius:50%;
-  transition:background .2s var(--ease-out-quart, ease), transform .2s var(--ease-out-quart, ease);
-}
-.mbim2-landing .testimonial-mute-btn{
-  top:12px;
-  right:12px;
-  width:32px;
-  height:32px;
-}
-.mbim2-landing .testimonial-mute-btn:hover{background:rgba(3,7,18,0.84);}
-.mbim2-landing .testimonial-play-btn{
-  inset:0;
-  margin:auto;
-  width:54px;
-  height:54px;
-}
-.mbim2-landing .testimonial-play-btn:hover{background:rgba(3,7,18,0.8);transform:scale(1.06);}
+.mbim2-landing .testimonial-mute-btn{top:12px;right:12px;width:32px;height:32px;}
+.mbim2-landing .testimonial-mute-btn:hover{background:rgba(10,14,20,0.82);}
+.mbim2-landing .testimonial-play-btn{inset:0;margin:auto;width:56px;height:56px;}
+.mbim2-landing .testimonial-play-btn:hover{background:rgba(0,108,255,0.85);transform:scale(1.06);}
 .mbim2-landing .testimonial-play-btn svg{margin-left:2px;}
-.mbim2-landing .testimonial-body{
-  padding:22px 24px 26px;
-  display:flex;
-  flex-direction:column;
-  flex:1;
-}
-.mbim2-landing .testimonial-n{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11.5px;
-  color:var(--blueprint);
-  letter-spacing:0.04em;
-  margin-bottom:12px;
-}
-.mbim2-landing .testimonial .quote{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-weight:700;
-  font-size:17px;
-  line-height:1.35;
-  color:var(--ink);
-  flex:1;
-}
-.mbim2-landing .testimonial .who{
-  margin-top:22px;
-  padding-top:16px;
-  border-top:1px solid var(--line-soft);
-}
-.mbim2-landing .testimonial .who .name{
-  font-family:var(--font-space-grotesk), sans-serif;
-  font-weight:600;
-  font-size:13.5px;
-}
-.mbim2-landing .testimonial .who .meta{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:12.5px;
-  color:#5B6470;
-  margin-top:4px;
-  letter-spacing:0.02em;
-}
+.mbim2-landing .testimonial-body{padding:22px 24px 26px;display:flex;flex-direction:column;flex:1;}
+.mbim2-landing .testimonial-n{font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;color:var(--blueprint);letter-spacing:0.04em;margin-bottom:12px;}
+.mbim2-landing .testimonial .quote{font-family:var(--font-space-grotesk), sans-serif;font-weight:700;font-size:17px;line-height:1.35;color:var(--ink);flex:1;}
+.mbim2-landing .testimonial .who{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
+.mbim2-landing .testimonial .who .name{font-family:var(--font-space-grotesk), sans-serif;font-weight:600;font-size:13.5px;}
+.mbim2-landing .testimonial .who .meta{font-family:var(--font-ibm-plex-mono), monospace;font-size:12.5px;color:var(--muted);margin-top:4px;letter-spacing:0.02em;}
 @media(max-width:900px){
   .mbim2-landing .testimonials{grid-template-columns:1fr;}
   .mbim2-landing .testimonials-quote-mark{font-size:200px;}
 }
 @media(prefers-reduced-motion:reduce){
-  .mbim2-landing .testimonial-mute-btn,
-  .mbim2-landing .testimonial-play-btn{transition:none !important;}
+  .mbim2-landing .testimonial-mute-btn,.mbim2-landing .testimonial-play-btn{transition:none !important;}
 }
 
-/* ---------- admission ---------- */
-.mbim2-landing .steps{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-  margin-bottom:48px;
-}
-.mbim2-landing .step{
-  padding:28px 24px;
-}
-.mbim2-landing .step .n{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  color:var(--blueprint);
-  font-size:13px;
-}
+/* ---------- admisión ---------- */
+.mbim2-landing .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:48px;}
+.mbim2-landing .step{position:relative;padding:30px 26px;}
+.mbim2-landing .step .n{font-family:var(--font-ibm-plex-mono), monospace;color:var(--blueprint);font-size:13px;}
 .mbim2-landing .step h4{font-size:17px;margin-top:10px;margin-bottom:8px;}
-.mbim2-landing .step p{font-size:14px;color:#3A424B;}
-@media(max-width:760px){
-  .mbim2-landing .steps{grid-template-columns:1fr;}
-}
+.mbim2-landing .step p{font-size:14px;color:var(--muted);}
+.mbim2-landing .step-accent{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blueprint);transform:scaleY(1);transform-origin:top center;pointer-events:none;}
+@media(max-width:760px){.mbim2-landing .steps{grid-template-columns:1fr;}}
 
-/* CTA alternativo bajo los 3 pasos: para quien no quiere reservar plaza
-   todavía sin hablar antes con alguien — mismo destino de Calendly que el
-   resto de "sesión informativa" de la página, 2026-09-09. */
-.mbim2-landing .admision-alt-cta{
-  margin-top:28px;
-  padding-top:24px;
-  border-top:1px solid var(--line);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:18px;
-  flex-wrap:wrap;
-  text-align:center;
-}
-.mbim2-landing .admision-alt-cta p{
-  font-size:14.5px;
-  color:#3A424B;
-}
+.mbim2-landing .admision-alt-cta{margin-top:28px;padding-top:24px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;text-align:center;}
+.mbim2-landing .admision-alt-cta p{font-size:14.5px;color:var(--muted);}
 
-/* ---------- agenda: Calendly embebido, nunca un enlace de salida ----------
-   Pedido explícito del cliente (2026-09-09): el enlace a Calendly que ya
-   funciona en /contact-page se trae aquí embebido de verdad (mismo src),
-   y los 3 CTA de "sesión informativa" de esta página (hero, programa,
-   admisión) dejan de abrir /contact-page en pestaña nueva — ahora anclan a
-   esta sección con #agenda, igual que el resto de CTAs internos de la
-   página. Nadie sale de /landing por ningún botón. */
-.mbim2-landing .agenda-embed{
-  position:relative;
-  width:100%;
-  height:650px;
-  border-radius:16px;
-  overflow:hidden;
-  border:1px solid var(--line);
-  background:var(--white);
-  box-shadow:0 24px 60px -30px rgba(3,7,18,0.25);
-}
-.mbim2-landing .agenda-embed iframe{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  border:0;
-}
-@media(max-width:640px){
-  .mbim2-landing .agenda-embed{height:720px;border-radius:12px;}
-}
+/* ---------- agenda ---------- */
+.mbim2-landing .agenda-form-wrap{max-width:640px;margin:0 auto;}
 
 /* ---------- CTA final ---------- */
-.mbim2-landing .cta-final{
-  position:relative;
-  overflow:hidden;
-  background:var(--blueprint);
-  color:var(--white);
-  padding:80px 0;
-  text-align:left;
-}
-.mbim2-landing .cta-final::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  /* misma retícula técnica en blanco translúcido que ya usa .compare-new,
-     reutilizada como textura de fondo — no un motivo nuevo. */
-  background-image:
-    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size:32px 32px;
-  pointer-events:none;
-}
-.mbim2-landing .cta-final::after{
-  content:"";
-  position:absolute;
-  top:-140px;right:-100px;
-  width:440px;height:440px;
-  border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
-  pointer-events:none;
-}
-.mbim2-landing .cta-final .wrap{position:relative;z-index:1;}
-.mbim2-landing .cta-final h2{
-  color:var(--white);
-  font-size:clamp(30px,4vw,44px);
-  max-width:640px;
-}
-.mbim2-landing .cta-final p{
-  color:#C9D3F5;
-  margin-top:16px;
-  max-width:520px;
-  font-size:16.5px;
-}
-.mbim2-landing .cta-final .hero-actions{margin-top:34px;}
+.mbim2-landing .cta-final{padding:56px 0 100px;background:var(--bg);border-bottom:none;text-align:left;}
+.mbim2-landing .cta-final-card{position:relative;overflow:hidden;border-radius:var(--radius-lg);background:linear-gradient(135deg, var(--blueprint), var(--blueprint-strong));color:var(--white);padding:72px 64px;box-shadow:var(--shadow-brand);}
+.mbim2-landing .cta-final-card::after{content:"";position:absolute;top:-160px;right:-120px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);pointer-events:none;}
+.mbim2-landing .cta-final-card > *{position:relative;z-index:1;}
+.mbim2-landing .cta-final h2{color:var(--white);font-size:clamp(28px,3.6vw,40px);max-width:640px;}
+.mbim2-landing .cta-final p{color:rgba(255,255,255,0.82);margin-top:16px;max-width:520px;font-size:16.5px;}
+.mbim2-landing .cta-final .hero-actions{margin-top:36px;}
+@media(max-width:640px){.mbim2-landing .cta-final-card{padding:48px 28px;}}
 
 /* ---------- footer ---------- */
-.mbim2-landing footer{
-  background:var(--ink);
-  color:#9AA1A9;
-  padding:56px 0 36px;
-}
-.mbim2-landing .footer-grid{
-  display:grid;
-  grid-template-columns:2fr 1fr 1fr;
-  gap:40px;
-}
-.mbim2-landing .footer-grid h5{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  font-size:11.5px;
-  letter-spacing:0.06em;
-  text-transform:uppercase;
-  color:#5B6470;
-  margin-bottom:14px;
-}
-.mbim2-landing .footer-grid .brand{
-  font-family:var(--font-space-grotesk), sans-serif;
-  color:var(--white);
-  font-size:20px;
-  font-weight:700;
-}
+.mbim2-landing footer{background:var(--ink);color:#8b93a1;padding:60px 0 36px;}
+.mbim2-landing .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px;}
+.mbim2-landing .footer-grid h5{font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;color:#6b7280;margin-bottom:14px;}
+.mbim2-landing .footer-grid .brand{font-family:var(--font-space-grotesk), sans-serif;color:var(--white);font-size:20px;font-weight:700;}
 .mbim2-landing .footer-grid p, .mbim2-landing .footer-grid li{font-size:14px;line-height:1.9;}
-.mbim2-landing .footer-bottom{
-  margin-top:48px;
-  padding-top:20px;
-  border-top:1px solid rgba(255,255,255,0.1);
-  font-size:12.5px;
-  display:flex;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:10px;
-}
+.mbim2-landing .footer-grid a:hover{color:var(--white);}
+.mbim2-landing .footer-bottom{margin-top:48px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1);font-size:12.5px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
 @media(max-width:760px){.mbim2-landing .footer-grid{grid-template-columns:1fr;}}
 
-/* ===========================================================================
-   REDISEÑO DE MOTION (2026-09-07) — capa añadida sobre el mockup original,
-   sin tocar ningún texto. Reutiliza tokens/curvas ya definidos arriba
-   (--ease-out-expo, --ease-out-quart, --ease-spring, --blueprint) y las
-   clases globales del sitio (.journey-spotlight, .btn-sweep, .site-cursor,
-   data-magnetic), nunca inventa un segundo sistema de curvas.
-   =========================================================================== */
+/* ---------- flecha de los CTA ---------- */
+.mbim2-landing .btn-arrow-icon{display:inline-flex;transition:transform .45s var(--ease-out-expo, ease);}
+.mbim2-landing .btn:hover .btn-arrow-icon,.mbim2-landing .btn:focus-visible .btn-arrow-icon{transform:translateX(0.3rem);}
+@media(prefers-reduced-motion:reduce){.mbim2-landing .btn-arrow-icon{transition:none !important;transform:none !important;}}
 
-/* --- Hero: foco que sigue al cursor, reutiliza .journey-spotlight (global) -
-   Esa clase ya trae su propia anulación por prefers-reduced-motion en
-   globals.css — no hace falta duplicarla aquí. */
-.mbim2-landing .hero-spotlight-host{position:relative;}
+/* ---------- pulso del CTA ---------- */
+.mbim2-landing .cta-pulse-wrap{position:relative;display:inline-flex;border-radius:999px;}
+.mbim2-landing .cta-pulse-wrap::before{content:"";position:absolute;inset:0;border-radius:999px;box-shadow:0 0 0 0 rgba(0,108,255,0.35);pointer-events:none;}
+@media(prefers-reduced-motion:no-preference){.mbim2-landing .cta-pulse-wrap::before{animation:mbim2-cta-pulse 2.6s var(--ease-in-out-quint, ease) infinite;}}
+@keyframes mbim2-cta-pulse{0%{box-shadow:0 0 0 0 rgba(0,108,255,0.35);}70%{box-shadow:0 0 0 14px rgba(0,108,255,0);}100%{box-shadow:0 0 0 14px rgba(0,108,255,0);}}
+.mbim2-landing .cta-date{font-family:var(--font-ibm-plex-mono), monospace;letter-spacing:0.01em;color:var(--white);}
+.mbim2-landing .cta-lede-muted{color:rgba(255,255,255,0.65);}
 
-/* --- Flecha de los CTA: funciona con cualquier variante de .btn, no solo
-   con .btn-sweep — .btn-signal conserva su propio hover de color-mix y
-   solo gana el desplazamiento de la flecha. */
-.mbim2-landing .btn-arrow-icon{
-  display:inline-flex;
-  transition:transform .45s var(--ease-out-expo, ease);
-}
-.mbim2-landing .btn:hover .btn-arrow-icon,
-.mbim2-landing .btn:focus-visible .btn-arrow-icon{
-  transform:translateX(0.3rem);
-}
-
-/* --- Anillo de pulso del CTA final — infinito, por eso vive por completo
-   dentro de prefers-reduced-motion:no-preference (nunca una anulación
-   aparte: fuera de esa media query, la animación simplemente no existe). */
-.mbim2-landing .cta-pulse-wrap{
-  position:relative;
-  display:inline-flex;
-  border-radius:2px;
-}
-.mbim2-landing .cta-pulse-wrap::before{
-  content:"";
-  position:absolute;
-  inset:-6px;
-  border-radius:4px;
-  border:1.5px solid rgba(255,255,255,0.55);
-  opacity:0;
-  pointer-events:none;
-}
-@media(prefers-reduced-motion:no-preference){
-  .mbim2-landing .cta-pulse-wrap::before{
-    animation:mbim2-cta-pulse 2.6s var(--ease-in-out-quint) infinite;
-  }
-}
-@keyframes mbim2-cta-pulse{
-  0%{opacity:0.65;transform:scale(1);}
-  70%{opacity:0;transform:scale(1.16);}
-  100%{opacity:0;transform:scale(1.16);}
-}
-.mbim2-landing .cta-date{
-  font-family:var(--font-ibm-plex-mono), monospace;
-  letter-spacing:0.01em;
-  color:var(--white);
-}
-.mbim2-landing .cta-lede-muted{
-  color:rgba(255,255,255,0.62);
-}
-
-/* --- "El Problema": el año 2019 se tiñe (skill web-designer, patrón #25
-   Two-Tone Split Headings) para que el titular no dependa solo del texto
-   para marcar el contraste con/sin el máster. */
-.mbim2-landing .year-tint{
-  color:var(--signal);
-}
-
-/* --- "El Problema": revelado por líneas del párrafo de entrada (skill
-   web-designer, patrón #19 — adaptado a SplitText/GSAP, ya en uso en el
-   resto de la página, en vez del IntersectionObserver+toggle de clase del
-   patrón original: mismo efecto visual, sin introducir un segundo
-   mecanismo de reveal). Nunca en el mismo párrafo que ya usa SplitText
-   (.ai-lede, revelado carácter a carácter) — es un texto distinto, para no
-   duplicar tratamiento sobre el mismo elemento. */
-.mbim2-landing .problema-lede-line{
-  overflow:hidden;
-}
-
-/* --- Innovation Summit: carril de progreso real (elemento propio, no un
-   ::before — hace falta un nodo real para poder escalarlo desde GSAP).
-   Por defecto ya dibujado (scaleX:1): si GSAP no llega a cargar (movimiento
-   reducido), el carril se ve completo desde el primer render, nunca oculto. */
-.mbim2-landing .summit-progress{
-  position:absolute;
-  top:11px;left:0;right:0;
-  height:1px;
-  background:var(--blueprint);
-  transform-origin:left center;
-  transform:scaleX(1);
-  pointer-events:none;
-}
-
-/* --- Admisión: acento lateral por paso, mismo "carril que se dibuja" que
-   la línea de tiempo de Sobre IDESIE, aplicado en vertical. Visible al
-   100% por defecto por el mismo motivo que el carril del summit. */
-.mbim2-landing .step{position:relative;}
-.mbim2-landing .step-accent{
-  position:absolute;
-  left:0;top:0;bottom:0;
-  width:3px;
-  background:var(--blueprint);
-  transform:scaleY(1);
-  transform-origin:top center;
-  pointer-events:none;
-}
-
-@media(prefers-reduced-motion:reduce){
-  .mbim2-landing .btn-arrow-icon{
-    transition:none !important;
-    transform:none !important;
-  }
-}
-
-/* ---------- CTA de cierre de sección (metodología / IA / certificación) ----------
-   Mismo tratamiento discreto que el CTA ya existente bajo el mapa de
-   módulos (.programa-cta-row + .programa-cta-link): un enlace texto +
-   flecha, nunca un botón de "clímax" — la jerarquía la marcan el hero, el
-   CTA final y la barra flotante. 2026-09-10. */
-.mbim2-landing .section-cta-row{
-  margin-top:34px;
-  padding-top:24px;
-  border-top:1px solid rgba(3,7,18,0.09);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  flex-wrap:wrap;
-  text-align:center;
-}
-.mbim2-landing .section-cta-row p{
-  font-size:14px;
-  color:#3A424B;
-}
-
-/* ---------- barra flotante de CTA ----------
-   Aparece cuando el hero ya no está a la vista; se oculta cuando #agenda
-   (o el CTA final) entra en pantalla, para no duplicar el CTA justo al
-   lado del calendario real. Full-width en móvil. */
+/* ---------- barra flotante de CTA ---------- */
 .mbim2-landing .landing-sticky-cta{
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  z-index:60;
-  padding:12px 24px;
-  padding-bottom:calc(12px + env(safe-area-inset-bottom));
-  background:rgba(237,239,239,0.95);
-  backdrop-filter:blur(10px);
-  border-top:1px solid var(--line);
-  box-shadow:0 -14px 44px -28px rgba(3,7,18,0.4);
-  transform:translateY(120%);
-  transition:transform .35s var(--ease-out-quart, ease);
-  pointer-events:none;
+  position:fixed;left:0;right:0;bottom:0;z-index:60;padding:14px 24px;padding-bottom:calc(14px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  box-shadow:0 -16px 44px -28px rgba(16,24,40,0.3);transform:translateY(120%);transition:transform .35s var(--ease-out-quart, ease);pointer-events:none;
 }
-.mbim2-landing .landing-sticky-cta.is-visible{
-  transform:translateY(0);
-  pointer-events:auto;
-}
-.mbim2-landing .landing-sticky-cta-inner{
-  max-width:var(--maxw);
-  margin:0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-}
-.mbim2-landing .landing-sticky-cta-text{
-  font-size:14px;
-  font-weight:600;
-  color:var(--ink);
-}
+.mbim2-landing .landing-sticky-cta.is-visible{transform:translateY(0);pointer-events:auto;}
+.mbim2-landing .landing-sticky-cta-inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.mbim2-landing .landing-sticky-cta-text{font-size:14px;font-weight:600;color:var(--ink);}
 .mbim2-landing .landing-sticky-cta .btn{flex-shrink:0;}
 @media(max-width:640px){
   .mbim2-landing .landing-sticky-cta{padding-left:16px;padding-right:16px;}
@@ -2506,20 +647,19 @@ const LANDING_STYLES = `
   .mbim2-landing .landing-sticky-cta .btn{width:100%;justify-content:center;}
 }
 @media(prefers-reduced-motion:reduce){
-  .mbim2-landing .landing-sticky-cta{
-    transform:none;
-    opacity:0;
-    transition:opacity .2s ease;
-  }
+  .mbim2-landing .landing-sticky-cta{transform:none;opacity:0;transition:opacity .2s ease;}
   .mbim2-landing .landing-sticky-cta.is-visible{opacity:1;}
 }
 
-/* Placeholder mientras el <iframe> de Calendly aún no tiene src (se
-   construye en cliente para pasar embed_domain). El contenedor .agenda-embed
-   ya fija la altura, así que no hay salto de layout. */
-.mbim2-landing .agenda-embed-loading{
-  position:absolute;
-  inset:0;
+/* ---------- responsive general ---------- */
+@media(max-width:960px){
+  .mbim2-landing .hero-copy-col{padding:48px 28px 32px;}
+  .mbim2-landing .hero-visual-col{padding:40px 28px;}
+}
+@media(max-width:600px){
+  .mbim2-landing .compare-panel{padding:26px;}
+  .mbim2-landing .metodologia-head h2{font-size:30px;}
+  .mbim2-landing .problema-head h2{font-size:30px;}
 }
 `
 
@@ -2551,12 +691,6 @@ const MODULES: Module[] = [
     ects: 6,
     hours: 150,
     flagship: true,
-    // Descripción real, reutilizada tal cual de la propia sección de IA
-    // de esta landing (asistentes documentales propios / imagen y vídeo
-    // fotorrealista / agentes sobre el modelo BIM) — sustituye a la nota
-    // de redacción sin terminar que había antes ("Ver sección dedicada
-    // arriba ↑…", con nombres de herramienta no confirmados y una
-    // atribución a L35 que ya se retiró de la sección de IA).
     description:
       "Conecta agentes de IA a tu modelo de Revit, genera imagen y vídeo fotorrealista, y configura asistentes documentales propios entrenados con la normativa de tu estudio.",
   },
@@ -2633,19 +767,6 @@ const OUTCOMES = [
   { n: "1", text: "proyecto real defendido ante empresas, no ante un aula" },
 ]
 
-// Ventanas iluminadas de la torre principal del edificio 3D del hero —
-// posiciones relativas a la cara frontal (90×300px), encendido escalonado
-// 1.1s-2s tal como pide el mockup.
-const HERO_WINDOWS = [
-  { top: 30, left: 14, delay: "1.1s" },
-  { top: 30, left: 56, delay: "1.25s" },
-  { top: 78, left: 14, delay: "1.4s" },
-  { top: 78, left: 56, delay: "1.55s" },
-  { top: 126, left: 14, delay: "1.7s" },
-  { top: 126, left: 56, delay: "1.85s" },
-  { top: 174, left: 35, delay: "2s" },
-]
-
 // Los 3 testimonios son reales, de alumnos del Máster BIM Full Time (el
 // programa tal como era antes del enfoque "MBIM 2.0" con IA) — no hablan del
 // módulo de IA porque no lo cursaron, y se muestran tal cual, sin adaptar la
@@ -2680,16 +801,12 @@ const STEPS = [
 ]
 
 export function LandingClient({ fontVariables }: { fontVariables: string }) {
-  // Hero: foco que sigue al cursor sobre el fondo de retícula técnica, más
-  // un parallax sutil de esa misma retícula. El <h1> no se toca aquí — su
-  // revelado sigue siendo 100% CSS (.hero-line/.hero-fade), fuera de este
-  // hook, para no comprometer el LCP.
+  // Hero: foco que sigue al cursor sobre la columna izquierda, más el
+  // parallax de fondo (si existiera algún `.grid-bg`, hoy no queda ninguno
+  // en el hero tras el rediseño — `querySelectorAll` simplemente no
+  // encuentra nada y el tween no hace nada, sin errores). El <h1> no se
+  // toca aquí — su revelado sigue siendo 100% CSS, fuera de este hook.
   const heroRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
-    // El foco vive solo en la columna izquierda (data-spotlight) desde el
-    // rediseño a dos columnas (2026-09-08) — el listener y el cálculo de
-    // posición se atan al propio elemento, no a `scope` (el hero entero,
-    // que ahora incluye el panel oscuro de la derecha), para que el %
-    // se calcule sobre el ancho real de la columna, no del hero completo.
     const spotlight = scope.querySelector<HTMLElement>("[data-spotlight]")
     let removeSpotlight: (() => void) | undefined
     if (spotlight) {
@@ -2702,15 +819,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       removeSpotlight = () => spotlight.removeEventListener("pointermove", onMove)
     }
 
-    const grids = scope.querySelectorAll(".grid-bg")
-    if (grids.length) {
-      gsap.to(grids, {
-        yPercent: 14,
-        ease: "none",
-        scrollTrigger: { trigger: scope, start: "top top", end: "bottom top", scrub: true },
-      })
-    }
-
     gsap.from(scope.querySelectorAll(".hero-chip"), {
       opacity: 0,
       y: 16,
@@ -2719,37 +827,19 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       delay: 0.6,
     })
 
-    // Edificio 3D: los 4 volúmenes + el mástil entran escalonados
-    // (delays ~0.1s-0.58s, el mockup pide 0.1s-0.55s). Nunca se anima
-    // `transform`/`rotate` aquí: cada .b3d-box ya usa `left/bottom` para
-    // su posición (no `transform`), así que animar opacity/y en GSAP no
-    // pelea con nada — a diferencia de las tarjetas, más abajo.
-    gsap.from(scope.querySelectorAll(".b3d-box, .hero-mast"), {
-      opacity: 0,
-      y: 20,
-      stagger: 0.12,
-      duration: 0.6,
-      delay: 0.1,
-    })
-
-    // Tarjetas flotantes: SOLO se anima `opacity` en GSAP, nunca
-    // `transform` — cada tarjeta ya tiene una animación CSS continua
-    // (flotación + inclinación 3D) sobre `transform`, y una animación CSS
-    // activa siempre gana a cualquier valor de `transform` normal
-    // (incluido uno puesto por GSAP), así que intentar animar y/scale/
-    // rotate aquí quedaría invisible. `animation-fill-mode:backwards` (CSS)
-    // ya deja la tarjeta en su pose de reposo durante el delay inicial.
+    // Las 3 tarjetas de la columna derecha entran con un fundido escalonado.
     gsap.from(scope.querySelectorAll(".hero-float-card"), {
       opacity: 0,
-      stagger: 0.2,
-      duration: 0.5,
-      delay: 1.3,
+      y: 16,
+      stagger: 0.15,
+      duration: 0.6,
+      delay: 0.5,
+      clearProps: "transform",
     })
 
     // Barra de plazas: por defecto ya dibujada hasta el ratio real
     // (23/30 → 77%, confirmado por el cliente) para que se vea completa si
-    // GSAP no llega a correr; aquí se reinicia a 0 y se redibuja al
-    // montar, mismo mecanismo que .summit-progress más abajo en la página.
+    // GSAP no llega a correr; aquí se reinicia a 0 y se redibuja al montar.
     const seatFill = scope.querySelector(".seat-bar-fill")
     if (seatFill) {
       gsap.set(seatFill, { scaleX: 0 })
@@ -2757,7 +847,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
         scaleX: 23 / 30,
         duration: 1,
         ease: "power2.out",
-        delay: 1.6,
+        delay: 1.1,
       })
     }
 
@@ -2782,11 +872,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       })
     }
 
-    // Rediseño de la comparativa (2026-09-08): toda la coreografía se
-    // dispara al entrar la sección en pantalla (ScrollTrigger, once),
-    // nunca al cargar la página — pedido explícito. El filtro
-    // saturate(.5)/scale(.97) del panel izquierdo ya es una propiedad CSS
-    // estática (no un scrub de scroll como en la versión anterior).
     const compareTrigger = { trigger: scope.querySelector(".compare"), start: "top 78%", once: true }
 
     gsap.from(scope.querySelectorAll(".compare-old"), {
@@ -2802,24 +887,18 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       scrollTrigger: compareTrigger,
     })
 
-    // Línea de tachado sobre "2019": por defecto ya trazada (CSS), aquí se
-    // reinicia a 0 y se redibuja, mismo mecanismo que .summit-progress.
     const strikeLine = scope.querySelector(".problema-strike-line")
     if (strikeLine) {
       gsap.set(strikeLine, { scaleX: 0 })
       gsap.to(strikeLine, {
         scaleX: 1,
         duration: 1,
-        ease: "expo.out", // --ease-out-expo, cubic-bezier(.16,1,.3,1)
+        ease: "expo.out",
         delay: 0.5,
         scrollTrigger: compareTrigger,
       })
     }
 
-    // Filas del panel izquierdo: fade + translateY, delays .35/.45/.55/.65.
-    // clearProps:"transform" al terminar — si no, el transform inline que
-    // deja GSAP le ganaría para siempre al `:hover{transform:translateX()}`
-    // de .compare-row.
     gsap.from(scope.querySelectorAll(".compare-old .compare-row"), {
       opacity: 0,
       y: 10,
@@ -2830,7 +909,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       scrollTrigger: compareTrigger,
     })
 
-    // Filas del panel derecho: delays .5/.62/.74/.86.
     gsap.from(scope.querySelectorAll(".compare-new .compare-row"), {
       opacity: 0,
       y: 10,
@@ -2841,9 +919,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       scrollTrigger: compareTrigger,
     })
 
-    // Barras de acento verticales de cada fila del panel derecho: se
-    // dibujan con scaleY 0→1, delays .7/.82/.94/1.06 — por defecto ya
-    // trazadas (CSS, scaleY:1), aquí se reinician a 0 y se redibujan.
     const accents = scope.querySelectorAll(".compare-row-accent")
     if (accents.length) {
       gsap.set(accents, { scaleY: 0 })
@@ -2862,24 +937,17 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
   // Metodología: entrada de las dos tarjetas de jornada, y los dos segmentos
   // de la barra de contrato se dibujan de izquierda a derecha al llegar.
   const metodologiaRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
-    // Rediseño (2026-09-08): toda la coreografía comparte un único
-    // ScrollTrigger (la sección completa, "once"), con los delays exactos
-    // pedidos — dispara al entrar en pantalla, no al cargar la página.
     const trigger = { trigger: scope, start: "top 75%", once: true }
 
-    // Bloque del contrato: fade + translateY(16px).
     gsap.from(scope.querySelectorAll(".contract-block"), {
       opacity: 0,
       y: 16,
       duration: 0.75,
-      ease: "expo.out", // --ease-out-expo, cubic-bezier(.16,1,.3,1)
+      ease: "expo.out",
       delay: 0.25,
       scrollTrigger: trigger,
     })
 
-    // Subrayado degradado bajo "Cobras mientras lo haces.": por defecto ya
-    // trazado (CSS, scaleX:1); aquí se reinicia a 0 y se redibuja, mismo
-    // mecanismo que .problema-strike-line más arriba en la página.
     const gradUnderline = scope.querySelector(".metodologia-grad-underline")
     if (gradUnderline) {
       gsap.set(gradUnderline, { scaleX: 0 })
@@ -2892,8 +960,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       })
     }
 
-    // Los 2 segmentos de la línea temporal: por defecto ya trazados (CSS,
-    // scaleX:1); se reinician a 0 y se redibujan en secuencia.
     const segWork = scope.querySelector(".contract-timeline-seg--work")
     const segIntern = scope.querySelector(".contract-timeline-seg--intern")
     if (segWork) {
@@ -2905,8 +971,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       gsap.to(segIntern, { scaleX: 1, duration: 1.1, ease: "expo.out", delay: 1, scrollTrigger: trigger })
     }
 
-    // Los 2 bloques de texto bajo la línea temporal: fade + translateY,
-    // delays 1.25s / 1.37s.
     gsap.from(scope.querySelectorAll(".contract-timeline-label"), {
       opacity: 0,
       y: 10,
@@ -2916,11 +980,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       scrollTrigger: trigger,
     })
 
-    // Las 2 filas del día partido: fade + translateY, delays 1.5s / 1.62s.
-    // clearProps:"transform" al terminar — si no, el transform inline que
-    // deja GSAP le ganaría para siempre al hover (padding-left, no
-    // transform, en este caso — pero se mantiene el mismo criterio de
-    // limpieza que en el resto de la página por consistencia).
     gsap.from(scope.querySelectorAll(".day-row"), {
       opacity: 0,
       y: 10,
@@ -2931,11 +990,9 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     })
   })
 
-  // IA — rediseño editorial (2026-09-09): ya no hay revelado carácter a
-  // carácter (era parte del vocabulario "técnico" que se pidió retirar).
-  // Una única coreografía con los delays exactos pedidos: las 3
-  // capacidades entran primero, luego la cabecera del toolkit, luego las
-  // 4 columnas, y por último el subrayado de cada etiqueta se dibuja.
+  // IA — una única coreografía: las 3 capacidades entran primero, luego la
+  // cabecera del toolkit, luego las 4 columnas, y por último el subrayado
+  // de cada etiqueta se dibuja.
   const iaRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
     const trigger = { trigger: scope, start: "top 75%", once: true }
 
@@ -2943,9 +1000,9 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       opacity: 0,
       y: 18,
       duration: 0.8,
-      ease: "expo.out", // --ease-out-expo, cubic-bezier(.16,1,.3,1)
+      ease: "expo.out",
       delay: 0.2,
-      stagger: 0.15, // delays reales: .2 / .35 / .5
+      stagger: 0.15,
       scrollTrigger: trigger,
     })
 
@@ -2962,7 +1019,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       y: 18,
       duration: 0.6,
       delay: 0.7,
-      stagger: 0.1, // delays reales: .7 / .8 / .9 / 1
+      stagger: 0.1,
       scrollTrigger: trigger,
     })
 
@@ -2973,13 +1030,12 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       duration: 0.8,
       ease: "expo.out",
       delay: 1.1,
-      stagger: 0.1, // delays reales: 1.1 / 1.2 / 1.3 / 1.4
+      stagger: 0.1,
       scrollTrigger: trigger,
     })
   })
 
-  // Programa — mapa visual (2026-09-09): una única coreografía con los
-  // delays exactos pedidos — el rail de fases entra primero (bloque, luego
+  // Programa — mapa visual: el rail de fases entra primero (bloque, luego
   // su barra se dibuja), después las 9 tarjetas del grid, y por último la
   // franja de total/reparto.
   const programaRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
@@ -2990,7 +1046,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       y: 12,
       duration: 0.5,
       delay: 0.15,
-      stagger: 0.1, // delays reales: .15 / .25 / .35 / .45
+      stagger: 0.1,
       scrollTrigger: trigger,
     })
 
@@ -2999,9 +1055,9 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     gsap.to(bars, {
       scaleX: 1,
       duration: 0.8,
-      ease: "expo.out", // --ease-out-expo, cubic-bezier(.16,1,.3,1)
+      ease: "expo.out",
       delay: 0.5,
-      stagger: 0.12, // delays reales: .5 / .62 / .74 / .86
+      stagger: 0.12,
       scrollTrigger: trigger,
     })
 
@@ -3010,11 +1066,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       y: 12,
       duration: 0.5,
       delay: 0.6,
-      stagger: 0.07, // delays reales: .6 → 1.16 en pasos de .07
-      // .programa-card tiene su propio transition:transform para el
-      // hover — sin limpiar el inline transform que deja GSAP, se queda
-      // congelada a mitad de camino (mismo bug que .cred-card, ver
-      // certificacionRef).
+      stagger: 0.07,
       clearProps: "transform",
       scrollTrigger: trigger,
     })
@@ -3030,19 +1082,8 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
 
   // Certificación — ★ momento de bandera: las 3 credenciales se "sellan" al
   // entrar en pantalla, mismo mecanismo exacto que balance-ledger.tsx /
-  // convenio-card.tsx (back.out + stagger) — encaja de forma literal porque
-  // el contenido son certificaciones reales.
+  // convenio-card.tsx (back.out + stagger).
   const certificacionRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
-    // clearProps:"transform" es obligatorio aquí: .cred-card es .glass-card,
-    // que ya trae su propio `transition:transform` para el hover. Sin
-    // limpiar el inline que deja GSAP al terminar, esa transición CSS se
-    // pelea con cada frame que GSAP escribe durante el tween — no es solo
-    // un jank visual, la tarjeta se queda literalmente congelada a mitad
-    // de camino (verificado leyendo el transform computado tras el tween:
-    // se quedaba en rotate(-4deg) scale(0.85), el estado de partida, nunca
-    // llegaba a rotate(0) scale(1)). Mismo fix aplicado a cualquier tarjeta
-    // de esta sesión que sea .glass-card/.programa-card Y además reciba
-    // una animación de entrada por GSAP sobre su propio transform.
     gsap.from(scope.querySelectorAll(".cred-card"), {
       opacity: 0,
       scale: 0.85,
@@ -3081,10 +1122,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
       y: 16,
       stagger: 0.15,
       duration: 0.5,
-      // .summit-card es .glass-card (transition:transform en :hover) — sin
-      // esto, la propia transición CSS se pelea con cada frame que escribe
-      // GSAP y la tarjeta se queda a medio animar (visto y corregido en
-      // .cred-card/.programa-card, mismo motivo).
       clearProps: "transform",
       scrollTrigger: { trigger: line, start: "top 80%", once: true },
     })
@@ -3110,10 +1147,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     })
   })
 
-  // Testimonios: entrada editorial (fade + translateY, delays escalonados)
-  // — mismo patrón que .outcome, sin la rotación/escala de la versión
-  // anterior de la sección (que ahora aloja vídeos reales, más peso visual
-  // que una tarjeta de texto suelta).
+  // Testimonios: entrada editorial (fade + translateY, delays escalonados).
   const testimoniosRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
     gsap.from(scope.querySelectorAll(".testimonial"), {
       opacity: 0,
@@ -3126,8 +1160,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
   })
 
   // Admisión: entrada de los 3 pasos + el acento lateral de cada uno se
-  // dibuja de arriba a abajo, escalonado — refuerza la sensación de
-  // progreso hacia la reserva de plaza.
+  // dibuja de arriba a abajo, escalonado.
   const admisionRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
     gsap.from(scope.querySelectorAll(".step"), {
       opacity: 0,
@@ -3149,11 +1182,9 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     )
   })
 
-  // Agenda: entrada simple de cabecera + marco del iframe — el propio
-  // Calendly ya tiene su carga y transiciones internas, no se anima nada
-  // dentro del embed.
+  // Agenda: entrada simple de cabecera + tarjeta del formulario.
   const agendaRef = useGsapEffect<HTMLElement>(({ gsap }, scope) => {
-    gsap.from(scope.querySelectorAll(".section-head, .agenda-embed"), {
+    gsap.from(scope.querySelectorAll(".section-head, .agenda-form-wrap"), {
       opacity: 0,
       y: 20,
       stagger: 0.12,
@@ -3174,56 +1205,11 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     })
   })
 
-  // ---- Calendly embebido: src construido en cliente para pasar
-  // `embed_domain` con el dominio REAL donde se sirve la página (en
-  // producción, `www.idesie.com`; en preview, el dominio de preview) —
-  // sin él Calendly no hace `postMessage` al parent y no podríamos
-  // detectar la reserva. `embed_type=Inline` es lo que Calendly espera
-  // para un embed en línea.
-  const [calendlySrc, setCalendlySrc] = useState<string | null>(null)
-  useEffect(() => {
-    const params = new URLSearchParams({
-      embed_domain: window.location.host,
-      embed_type: "Inline",
-    })
-    setCalendlySrc(`https://calendly.com/idesie-info/30min?${params.toString()}`)
-  }, [])
-
-  // ---- Reserva de llamada confirmada → eventos de Meta. Solo se dispara
-  // cuando Calendly avisa por `postMessage` de que la cita quedó agendada
-  // (`calendly.event_scheduled`), nunca en el clic de un CTA. `Schedule`
-  // (evento estándar de Meta para "reserva de cita") lo distingue del
-  // resto de leads; se envía también `Lead` para que la campaña optimice
-  // sobre un único evento agregado.
-  const scheduleFiredRef = useRef(false)
-  useEffect(() => {
-    function onMessage(e: MessageEvent) {
-      if (e.origin !== "https://calendly.com") return
-      const data = e.data
-      if (typeof data !== "object" || data === null) return
-      if ((data as { event?: string }).event !== "calendly.event_scheduled") return
-      if (scheduleFiredRef.current) return
-      scheduleFiredRef.current = true
-      trackMetaPixelEvent("Schedule")
-      trackMetaPixelEvent("Lead")
-    }
-    window.addEventListener("message", onMessage)
-    return () => window.removeEventListener("message", onMessage)
-  }, [])
-
   // ---- Descarga del PDF de programa → CatalogDownloadDialog controlado.
   const [catalogOpen, setCatalogOpen] = useState(false)
 
   // ---- Testimonios: 3 vídeos reales, sin autoplay ni controles nativos —
-  // controles propios (play centrado + mute en la esquina) para que el
-  // estado mostrado (icono, aria-label) nunca se desincronice de lo que
-  // hace el propio <video> (el bug real de la landing anterior, 2026-09-04
-  // (34), fue justo un control nativo que dejaba de responder por el
-  // overflow:hidden de un ancestro — aquí no hay control nativo que pueda
-  // sufrir ese problema). Arranca sin silenciar: son testimonios con voz
-  // real, y solo empiezan a sonar cuando el usuario pulsa play (un gesto
-  // suyo), así que no hace falta el `muted` inicial que sí necesita un
-  // autoplay.
+  // controles propios (play centrado + mute en la esquina).
   const testimonialVideoRefs = useRef<Array<HTMLVideoElement | null>>([])
   const [testimonialState, setTestimonialState] = useState(() => TESTIMONIALS.map(() => ({ playing: false, muted: false })))
 
@@ -3242,7 +1228,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
 
   // ---- Barra flotante de CTA: aparece cuando el hero ya no está a la
   // vista y se oculta cuando la sección de agenda (o el CTA final) está en
-  // pantalla, para no duplicar el CTA justo al lado del calendario real.
+  // pantalla.
   const [showSticky, setShowSticky] = useState(false)
   useEffect(() => {
     const hero = heroRef.current
@@ -3326,7 +1312,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
             className="hero-copy-col journey-spotlight hero-spotlight-host"
             data-spotlight
           >
-            <div className="grid-bg" />
             <div className="hero-copy-inner hero-inner">
               <div className="hero-social-proof hero-fade">
                 <span className="avatar-stack" aria-hidden="true">
@@ -3379,7 +1364,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
               <div className="hero-actions hero-fade hero-fade-late">
                 <span className="cta-pulse-wrap">
                   <a href="#agenda" className="btn hero-cta-gradient" data-magnetic>
-                    Agendar mi llamada gratuita
+                    Solicitar información
                     <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
                   </a>
                 </span>
@@ -3395,129 +1380,42 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
               </div>
               <a href="#agenda" className="hero-trust-note">
                 <CalendarCheck size={13} aria-hidden="true" />
-                Agenda una llamada gratuita · sin compromiso
+Solicita información · llamada opcional
               </a>
             </div>
           </div>
 
-          {/* columna derecha: panel oscuro con edificio 3D + tarjetas flotantes */}
+          {/* columna derecha: panel oscuro con las 3 tarjetas reales */}
           <div className="hero-visual-col">
-            <div className="grid-bg" />
+            <span className="hero-visual-glow hero-visual-glow--1" aria-hidden="true" />
+            <span className="hero-visual-glow hero-visual-glow--2" aria-hidden="true" />
 
-            <div className="hero-building-stage" aria-hidden="true">
-              <div className="hero-building">
-                <div className="hero-building-floor" />
-
-                {/* ala izquierda, altura media, más tenue */}
-                <div
-                  className="b3d-box b3d-box--dim"
-                  style={{
-                    ["--bw" as string]: "74px",
-                    ["--bh" as string]: "170px",
-                    ["--bd" as string]: "60px",
-                    left: "-133px",
-                    bottom: "0px",
-                  }}
-                >
-                  <div className="b3d-face b3d-face--front" />
-                  <div className="b3d-face b3d-face--back" />
-                  <div className="b3d-face b3d-face--left" />
-                  <div className="b3d-face b3d-face--right" />
-                  <div className="b3d-face b3d-face--top" />
+            <div className="hero-visual-stack">
+              <div className="hero-float-card hero-card-seats">
+                <div className="card-badge">◆ Plazas convocatoria</div>
+                <div className="seat-bar-track">
+                  <div className="seat-bar-fill" />
                 </div>
-
-                {/* podio bajo a la derecha, más tenue */}
-                <div
-                  className="b3d-box b3d-box--dim"
-                  style={{
-                    ["--bw" as string]: "82px",
-                    ["--bh" as string]: "112px",
-                    ["--bd" as string]: "64px",
-                    left: "59px",
-                    bottom: "0px",
-                  }}
-                >
-                  <div className="b3d-face b3d-face--front" />
-                  <div className="b3d-face b3d-face--back" />
-                  <div className="b3d-face b3d-face--left" />
-                  <div className="b3d-face b3d-face--right" />
-                  <div className="b3d-face b3d-face--top" />
-                </div>
-
-                {/* torre principal, con ventanas iluminadas en la fachada frontal */}
-                <div
-                  className="b3d-box"
-                  style={{
-                    ["--bw" as string]: "90px",
-                    ["--bh" as string]: "300px",
-                    ["--bd" as string]: "70px",
-                    left: "-45px",
-                    bottom: "0px",
-                  }}
-                >
-                  <div className="b3d-face b3d-face--front">
-                    {HERO_WINDOWS.map((w, i) => (
-                      <span
-                        key={i}
-                        className="hero-window"
-                        style={{ top: w.top, left: w.left, animationDelay: w.delay }}
-                      />
-                    ))}
-                  </div>
-                  <div className="b3d-face b3d-face--back" />
-                  <div className="b3d-face b3d-face--left" />
-                  <div className="b3d-face b3d-face--right" />
-                  <div className="b3d-face b3d-face--top" />
-                </div>
-
-                {/* coronación: retranqueo sobre la torre */}
-                <div
-                  className="b3d-box"
-                  style={{
-                    ["--bw" as string]: "60px",
-                    ["--bh" as string]: "70px",
-                    ["--bd" as string]: "50px",
-                    left: "-30px",
-                    bottom: "300px",
-                  }}
-                >
-                  <div className="b3d-face b3d-face--front" />
-                  <div className="b3d-face b3d-face--back" />
-                  <div className="b3d-face b3d-face--left" />
-                  <div className="b3d-face b3d-face--right" />
-                  <div className="b3d-face b3d-face--top" />
-                </div>
-
-                {/* mástil + baliza ámbar */}
-                <div className="hero-mast" style={{ bottom: "370px", height: "38px" }} />
-                <div className="hero-beacon" style={{ bottom: "406px" }} />
+                <p className="hero-card-caption">
+                  Plazas limitadas · <b>77%</b> ocupadas
+                </p>
               </div>
-            </div>
 
-            <div className="hero-float-card hero-card-seats">
-              <div className="card-badge">◆ Plazas convocatoria</div>
-              <div className="seat-bar-track">
-                <div className="seat-bar-fill" />
+              <div className="hero-float-card hero-card-testimonial">
+                <p className="quote">&ldquo;El BIM me abrió muchísimas puertas.&rdquo;</p>
+                <div className="who">
+                  <span className="who-avatar" aria-hidden="true" />
+                  <span className="who-meta">Agustina M. · MBIM</span>
+                </div>
               </div>
-              <p className="hero-card-caption">
-                Plazas limitadas · <b>77%</b> ocupadas
-              </p>
-            </div>
 
-            <div className="hero-float-card hero-card-testimonial">
-              <p className="quote">&ldquo;El BIM me abrió muchísimas puertas.&rdquo;</p>
-              <div className="who">
-                <span className="who-avatar" aria-hidden="true" />
-                <span className="who-meta">Agustina M. · MBIM</span>
+              <div className="hero-float-card hero-card-contract">
+                <div className="card-badge card-badge--white">Contrato garantizado</div>
+                <p>
+                  <b>16 meses</b> mínimo
+                </p>
+                <p>Remunerado desde el primer día.</p>
               </div>
-            </div>
-
-            <div className="hero-float-card hero-card-contract">
-              <div className="card-badge card-badge--white">Contrato garantizado</div>
-              <p>
-                <b>16 meses</b> mínimo
-              </p>
-              <p>Remunerado desde el primer día.</p>
             </div>
           </div>
         </div>
@@ -3525,9 +1423,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
 
       {/* ============ EL PROBLEMA ============ */}
       <section ref={problemaRef}>
-        <div className="grid-bg problema-bg-grid" />
         <div className="problema-aura" aria-hidden="true" />
-        <div className="corner-mark" />
         <div className="wrap">
           <div className="problema-head">
             <div className="problema-eyebrow">Por qué este máster es distinto</div>
@@ -3641,7 +1537,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
 
       {/* ============ METODOLOGÍA ============ */}
       <section id="metodologia" ref={metodologiaRef}>
-        <div className="grid-bg metodologia-bg-grid" />
         <div className="wrap">
           <div className="metodologia-head">
             <div className="metodologia-eyebrow">Metodología dual</div>
@@ -3724,14 +1619,14 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           <div className="section-cta-row">
             <p>¿Dudas sobre cómo funciona el contrato laboral? Te lo explicamos sin compromiso.</p>
             <a href="#agenda" className="programa-cta-link">
-              Agendar mi llamada gratuita
+              Solicitar información
               <ArrowRight size={14} aria-hidden="true" />
             </a>
           </div>
         </div>
       </section>
 
-      {/* ============ IA — rediseño editorial, fuera del fondo negro ============ */}
+      {/* ============ IA — editorial ============ */}
       <section className="ai-section" id="ia" ref={iaRef}>
         <span className="ai-blob ai-blob--1" aria-hidden="true" />
         <span className="ai-blob ai-blob--2" aria-hidden="true" />
@@ -3785,7 +1680,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           <div className="section-cta-row">
             <p>¿Quieres ver el módulo de IA aplicada al AEC en detalle? Pregúntanos en una llamada.</p>
             <a href="#agenda" className="programa-cta-link">
-              Agendar mi llamada gratuita
+              Solicitar información
               <ArrowRight size={14} aria-hidden="true" />
             </a>
           </div>
@@ -3794,7 +1689,6 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
 
       {/* ============ PROGRAMA — mapa visual, sin acordeón ============ */}
       <section id="programa" ref={programaRef}>
-        <div className="grid-bg programa-bg-grid" />
         <div className="wrap">
           <div className="programa-eyebrow">Programa completo · 36 ECTS</div>
           <h2 className="programa-title">
@@ -3846,10 +1740,10 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
                 21 núcleo BIM
               </div>
               <div className="programa-summary-item">
-                <span className="programa-summary-dot" style={{ background: "#7c3aed" }} />6 IA aplicada
+                <span className="programa-summary-dot" style={{ background: "var(--amber)" }} />6 IA aplicada
               </div>
               <div className="programa-summary-item">
-                <span className="programa-summary-dot" style={{ background: "#c4b3ff" }} />9 Talent + TFM
+                <span className="programa-summary-dot" style={{ background: "var(--dim)" }} />9 Talent + TFM
               </div>
             </div>
           </div>
@@ -3857,7 +1751,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           <div className="programa-cta-row">
             <p>¿Prefieres que te lo expliquemos en una llamada?</p>
             <a href="#agenda" className="programa-cta-link">
-              Agendar mi llamada gratuita
+              Solicitar información
               <ArrowRight size={14} aria-hidden="true" />
             </a>
           </div>
@@ -3901,7 +1795,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           <div className="section-cta-row">
             <p>¿Qué credencial pesa más para tu objetivo? Lo vemos en una llamada.</p>
             <a href="#agenda" className="programa-cta-link">
-              Agendar mi llamada gratuita
+              Solicitar información
               <ArrowRight size={14} aria-hidden="true" />
             </a>
           </div>
@@ -4029,7 +1923,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
           <div className="section-cta-row">
             <p>¿Quieres hablar con alguien del equipo antes de decidir?</p>
             <a href="#agenda" className="programa-cta-link">
-              Agendar mi llamada gratuita
+              Solicitar información
               <ArrowRight size={14} aria-hidden="true" />
             </a>
           </div>
@@ -4067,7 +1961,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
               style={{ ["--btn-fill" as string]: "rgba(0,108,255,0.08)" }}
             >
               <CalendarCheck size={15} aria-hidden="true" />
-              Agendar mi llamada gratuita
+              Solicitar información
               <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
             </a>
             <AdmisionModal origen="landing" programaPreseleccionado="MBIM">
@@ -4085,56 +1979,51 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
         </div>
       </section>
 
-      {/* ============ AGENDA — Calendly embebido, nunca se sale de /landing ============ */}
+      {/* ============ AGENDA — formulario propio, agendar llamada es opcional ============ */}
       <section id="agenda" ref={agendaRef}>
         <div className="wrap">
           <div className="section-head">
             <div className="editorial-eyebrow">Habla con nosotros</div>
-            <h2>Agenda tu llamada gratuita aquí mismo.</h2>
+            <h2>Cuéntanos qué necesitas — sin salir de esta página.</h2>
             <p>
-              Sin compromiso. Elige el hueco que mejor te venga — el calendario es real, sin salir de esta página.
+              Deja tus datos y te contactamos. Si prefieres que te llamemos a una hora concreta, puedes agendarlo:
+              es totalmente opcional.
             </p>
           </div>
-          <div className="agenda-embed">
-            {calendlySrc ? (
-              <iframe
-                src={calendlySrc}
-                title="Agenda una llamada informativa con IDESIE"
-                loading="lazy"
-              />
-            ) : (
-              <div className="agenda-embed-loading" aria-hidden="true" />
-            )}
+          <div className="agenda-form-wrap">
+            <LeadCaptureForm origen="Landing · Agenda" />
           </div>
         </div>
       </section>
 
       {/* ============ CTA FINAL ============ */}
-      <section className="cta-final" style={{ borderBottom: "none" }} ref={ctaRef}>
+      <section className="cta-final" ref={ctaRef}>
         <div className="wrap">
-          <h2>
-            <span className="cta-lede-muted">Empieza el </span>
-            <span className="cta-date">24 de octubre de 2026</span>
-            <span className="cta-lede-muted">.</span>
-          </h2>
-          <p>Grupo reducido, contrato desde el primer día y el módulo de IA más avanzado del mercado BIM en español.</p>
-          <div className="hero-actions">
-            <span className="cta-pulse-wrap">
-              <a href="#agenda" className="btn btn-signal" data-magnetic>
-                Agendar mi llamada gratuita
+          <div className="cta-final-card">
+            <h2>
+              <span className="cta-lede-muted">Empieza el </span>
+              <span className="cta-date">24 de octubre de 2026</span>
+              <span className="cta-lede-muted">.</span>
+            </h2>
+            <p>Grupo reducido, contrato desde el primer día y el módulo de IA más avanzado del mercado BIM en español.</p>
+            <div className="hero-actions">
+              <span className="cta-pulse-wrap">
+                <a href="#agenda" className="btn btn-signal" data-magnetic>
+                  Solicitar información
+                  <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
+                </a>
+              </span>
+              <button
+                type="button"
+                onClick={() => setCatalogOpen(true)}
+                className="btn btn-ghost-light btn-sweep"
+                data-magnetic
+                style={{ ["--btn-fill" as string]: "rgba(255,255,255,0.16)" }}
+              >
+                Descargar el programa (PDF)
                 <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
-              </a>
-            </span>
-            <button
-              type="button"
-              onClick={() => setCatalogOpen(true)}
-              className="btn btn-ghost-light btn-sweep"
-              data-magnetic
-              style={{ ["--btn-fill" as string]: "rgba(255,255,255,0.16)" }}
-            >
-              Descargar el programa (PDF)
-              <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
-            </button>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -4197,7 +2086,7 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
             data-magnetic
             tabIndex={showSticky ? 0 : -1}
           >
-            Agendar mi llamada gratuita
+            Solicitar información
             <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
           </a>
         </div>

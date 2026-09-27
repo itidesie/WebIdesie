@@ -8,7 +8,7 @@
 
 **Stack:** Next.js 16.2 (App Router, Turbopack) · React 19 · TypeScript ·
 Tailwind CSS v4 · shadcn/ui (Radix) · pnpm
-**Última actualización:** 2026-09-07 (50)
+**Última actualización:** 2026-09-28 (56)
 
 ---
 
@@ -37,14 +37,16 @@ página monta hoy `<MetaPixel/>`, así que esas llamadas son un no-op seguro
 montar `<MetaPixel/>` ahí. `NEXT_PUBLIC_META_PIXEL_ID` se deja tal cual en
 `.env.local`/`env.example`, sin tocar.
 
-**No tocado, huérfano pero no borrado** (fuera del alcance de "borra la
-página" — son infraestructura de backend, no la página en sí, y borrar una
-tabla real de Supabase es una decisión distinta y mayor que no se pidió):
-`/api/leads`, `/api/leads/disponibilidad`, `lib/leads-db.ts`,
-`lib/leads-time-slots.ts`, la tabla `leads` en Supabase, y
-`emails/lead-confirmation.tsx`. Sin ningún consumidor real hoy — quedan
-disponibles por si se recupera un flujo de captación de leads en otra
-página, o se borran en una sesión futura si se decide expresamente.
+**No tocado, huérfano pero no borrado** — así quedó el 2026-09-07, cuando se
+borró `/landing`. ✅ **Ya no está huérfano — reactivado el 2026-09-28 (54)**:
+`/api/leads` y `/api/leads/disponibilidad` volvieron a servir 200 (antes
+devolvían 410), ahora con rate limiting + honeypot, como backend del
+`LeadCaptureForm` que sustituye a Calendly en `/landing` y `/contact-page`.
+`lib/leads-db.ts`/`lib/leads-time-slots.ts`/la tabla `leads` siguen siendo
+la misma infraestructura, solo que con consumidores reales de nuevo — ver
+§5 "(54)" para el detalle completo. `emails/lead-confirmation.tsx` sigue
+sin usar (el email de confirmación se sigue construyendo inline en
+`lib/leads-db.ts`, sin cambios en esa decisión).
 
 **Recuperación**: los archivos que ya estaban comprometidos en git antes de
 esta sesión (`page.tsx`, y las versiones de `landing-client.tsx`/
@@ -202,7 +204,7 @@ función que atiende la petición.
 | `/opiniones-page` | Testimonios. **Rediseño propio "El Archivo de Voces"** (ver §5) — 2026-09-03 (25) |
 | `/financiacion-y-becas-page` | Financiación, becas, ISA |
 | `/bolsa-de-empleo-page` | Bolsa de empleo. **Rediseño propio "El Tablón"** (ver §5), datos reales desde `ofertas_empleo` vía `getPublicOfertas()`, candidatura vía `JobApplicationModal` → `ofertas_empleo`/`candidaturas_empleo` en Supabase (ver §3) |
-| `/contact-page` | Contacto. **Dos pestañas:** mensaje y Calendly. Acepta `?motivo=` y `?programa=` |
+| `/contact-page` | Contacto. **Dos pestañas:** mensaje y "Solicitar información" (`LeadCaptureForm` — agendar llamada es opcional dentro de esa pestaña, ya no Calendly, ver §5 "(54)"). Acepta `?motivo=` y `?programa=` |
 | `/tienda` | Listado de productos |
 | `/producto/[slug]` | Ficha de producto (dinámica, desde BD) |
 | `/checkout` | Carrito → pago |
@@ -5264,6 +5266,408 @@ los archivos que toques.
 ---
 
 ## 7. Registro de cambios
+
+### 2026-09-28 (56) — Migración 045 del CRM verificada contra Supabase local; commits en ambos repos, sin push
+
+Confirmado por el cliente: **la web y el CRM comparten el mismo proyecto de
+Supabase en producción** (esquema `public` para la web, `crm` para el CRM,
+en el mismo proyecto) — dato relevante para el orden de ejecución de
+scripts en producción, ver más abajo.
+
+**Verificación de `idesie-crm/supabase/migrations/045_lead_legacy_tarea.sql`**
+(la tarea automática para `lead_legacy` de (55)) contra el Supabase local
+del CRM, con la 037 de esta web ya aplicada (`pnpm db:reset`, migraciones
+020-045 aplicadas sin error). 5 filas de prueba (`e2e.*@e2e.test`) insertadas
+directamente por SQL — una por cada uno de los 5 casos — seguidas de
+`select crm.procesar_entradas()` y comprobación de `crm.tareas`:
+
+| Caso | Título de la tarea | Vencimiento | Resultado |
+|---|---|---|---|
+| Lead **con** llamada agendada | "Llamar — hora agendada: \<fecha\> \<hora\>" | Exactamente la fecha+hora de la llamada | ✅ |
+| Lead **sin** llamada agendada | "Contactar solicitud de información" | `recibido_at` + 1 día | ✅ |
+| `solicitud_admision` | "Revisar solicitud de admisión MBBE" | `recibido_at` + 2 días | ✅ sin cambios |
+| `mensaje_contacto` | "Responder mensaje de contacto" | `recibido_at` + 1 día | ✅ sin cambios |
+| `baja` | "Gestionar solicitud de baja / supresión de datos" | `recibido_at` + 25 días | ✅ sin cambios |
+
+Los 5 casos salieron exactos a la primera — sin necesidad de tocar la 045
+tras escribirla. Datos de prueba borrados al terminar (`crm.tareas`,
+`crm.entradas`, `crm.contacto_emails`, `crm.contactos` y las filas de
+`public.leads`/`solicitudes_admision`/`mensajes_contacto`/`solicitudes_baja`),
+confirmado por recuento a 0 en las 8 tablas tocadas. Supabase local del CRM
+parado al terminar (`supabase stop`) — el servidor de esta web (puerto 3000)
+no se tocó en ningún momento.
+
+**Commits hechos en ambos repos, sin push a ningún remoto** (petición
+explícita del cliente) — el commit de esta web incluye también, sin cambios
+de código de producción, los artefactos de diseño del CRM (`docs/`,
+`crm-integration/`) que ya estaban en el árbol de trabajo desde antes de
+esta sesión de verificación.
+
+**`idesie-crm` no tiene ningún remoto configurado.** Pasos para subirlo a un
+repo privado de GitHub (explicado al cliente, no ejecutado):
+1. Crear el repo vacío en GitHub (privado), sin inicializarlo con
+   README/licencia/`.gitignore` (el repo local ya los tiene).
+2. `git remote add origin git@github.com:<org>/idesie-crm.git` (o la URL
+   HTTPS, según cómo tenga configurada la autenticación).
+3. `git push -u origin main` — sube el historial completo y deja `main`
+   enlazada con `origin/main` para pushes futuros con solo `git push`.
+4. Revisar que ningún archivo con secretos reales viaje: `.env.local` ya
+   está en `.gitignore` en este repo (confirmar antes del primer push), y
+   ninguna migración de `supabase/migrations/` contiene valores reales —
+   solo definiciones de esquema/funciones.
+5. Si se va a conectar a Vercel para despliegue automático, hacerlo desde
+   el propio dashboard de Vercel una vez el remoto exista, no antes.
+
+**Lista final para ejecutar en producción, en orden:**
+1. `scripts/037_leads_agenda_opcional.sql` (este repo, web) — relaja
+   `session_date`/`session_time` a nullable en `public.leads` y añade
+   `mensaje`/`rgpd_aceptado`.
+2. `scripts/034_mensajes_contacto_add_telefono.sql` (este repo, web) — añade
+   `telefono` a `public.mensajes_contacto`. Independiente de la 037, puede
+   ir antes o después de ella sin ningún efecto cruzado.
+3. Migraciones pendientes de `idesie-crm` que aún no se hayan aplicado en
+   producción: `042_crm_canal_origen.sql`, `043_crm_importar_leads.sql`,
+   `044_leads_agenda_opcional.sql` (copia exacta de la 037, ver más abajo),
+   `045_lead_legacy_tarea.sql`.
+4. Desplegar el código de esta web (el que dependa de `session_date`/
+   `session_time` nullable y de las columnas nuevas) — solo después del
+   paso 1, nunca antes: el código nuevo puede escribir `NULL` en esas
+   columnas, y si el `NOT NULL` de antes sigue activo en producción,
+   cualquier lead sin llamada agendada fallaría al guardarse.
+
+**¿Importa el orden entre 037 (web) y 045 (CRM) específicamente?** No entre
+esas dos por separado — son cambios independientes que no se leen entre sí
+(037 solo toca `public.leads`; 045 solo reemplaza la función
+`crm.procesar_entradas()`). Pero **sí importa que la 037 vaya antes que la
+044 del CRM**, porque `044_leads_agenda_opcional.sql` es una copia literal
+de la 037 — si ya se ejecutó la 037 en producción (paso 1), la 044 del CRM
+queda como una operación inerte y segura (mismas columnas, ya nullable, ya
+creadas — `alter column ... drop not null` y `add column if not exists` no
+fallan si ya están así). Ejecutarlas en el orden contrario (044 antes que
+037) también sería seguro por el mismo motivo — son idénticas — pero no
+tiene sentido tener la misma migración registrada dos veces con historiales
+de ejecución distintos si se puede evitar simplemente respetando el orden
+de la lista de arriba. La 045 sí depende de que la 037/044 ya estén
+aplicadas (lee `session_date`/`session_time` como nullable en el payload),
+así que debe ir **después** de ambas — reflejado en el orden de la lista.
+
+### 2026-09-28 (55) — Notificación al equipo, tarea automática en el CRM, días hábiles, horas pasadas y manejo real del 409 en LeadCaptureForm
+
+Continuación directa de "(54)", tras una revisión punto por punto pedida por
+el cliente antes de commitear. Cinco encargos, todos implementados salvo lo
+que se dice expresamente que no:
+
+**1a) Email al equipo** — `lib/leads-db.ts` pasa de mandar solo la
+confirmación al lead a mandar **dos** emails, mismo patrón que
+`contact-db.ts`: aviso a `info@idesie.com` (con `replyTo` al lead, asunto
+con la hora de la llamada si la hay — "Llamada solicitada — 2026-09-30
+11:00" — para que se note sin abrir el correo) + la confirmación que ya
+existía. `sendConfirmationEmail` se renombra a `sendNotificationEmails`.
+
+**1b) Tarea automática en el CRM para `lead_legacy`** — nueva migración
+`idesie-crm/supabase/migrations/045_lead_legacy_tarea.sql` (la 041 no se
+toca, como se pidió explícitamente). Es un `CREATE OR REPLACE` de
+`crm.procesar_entradas()` con el cuerpo completo (Postgres lo exige para
+sustituir una función), cambiando solo el bloque "5e) Tareas": se añade
+`'lead_legacy'` a la lista de tipos que generan tarea, con vencimiento
+condicional — si el lead pidió llamada, la tarea vence exactamente en esa
+fecha+hora (`(payload->>'session_date' || ' ' || payload->>'session_time')::timestamptz`,
+con los paréntesis alrededor de cada `->>` que hacen falta porque `->>` y
+`||` comparten precedencia en Postgres y se leen de izquierda a derecha —
+sin ellos habría sido un error de tipos, no una concatenación); si no,
+vence en 1 día, igual que `mensaje_contacto`. **El resto del "case" pierde
+también el `else` implícito** que antes le daba a `baja` sus 25 días por
+descarte — con un tipo más en la lista, ese `else` habría alcanzado
+también a `lead_legacy` por accidente; ahora cada tipo tiene su rama
+explícita.
+⚠️ **No probada en vivo esta vez** (a diferencia de la migración 044): el
+cliente pidió explícitamente no levantar ningún proceso porque estaba
+trabajando en el CRM, así que esta se entrega revisada línea a línea pero
+sin ejecutar contra ningún Supabase, ni local ni de producción. Recomendado
+probarla contra el Supabase local antes o justo después de aplicarla en
+producción.
+
+**2) Días hábiles reales** — `components/lead-capture-form.tsx`:
+`proximosDias()` (14 días de calendario, fines de semana incluidos) se
+sustituye por `proximosDiasHabiles()` (14 días sin contar sábados ni
+domingos). Calculado con aritmética de enteros año/mes/día sobre
+`Date.UTC()`, nunca con la zona horaria local del navegador — así el día de
+la semana no depende de dónde esté físicamente quien rellena el formulario.
+
+**3) Tres comprobaciones, las tres tenían hueco real:**
+- **Horas ya pasadas si el día es hoy:** no se ocultaban en absoluto —
+  `fechaHoraMadridActual()` (nueva, vía `Intl.DateTimeFormat` con
+  `timeZone: "Europe/Madrid"`, no la hora del navegador) calcula la hora
+  real en España; si el día elegido es hoy, la rejilla usa
+  `horasVisibles` (filtradas) en vez de `LEAD_TIME_SLOTS` completo, y se
+  recalcula cada minuto por si alguien deja el formulario abierto un rato.
+  Si no queda ninguna hora libre hoy, se avisa con texto en vez de mostrar
+  una rejilla vacía sin explicación.
+- **409 (hora ya ocupada):** antes cualquier error, incluido el 409, caía
+  en el mismo mensaje genérico y no pasaba nada más. Ahora se detecta
+  `res.status === 409` específicamente: mensaje claro ("Esa hora acaba de
+  ocuparse. Elige otra, por favor."), se limpia la hora seleccionada y se
+  refresca la disponibilidad de esa fecha contra el servidor — sin esto, la
+  persona podía reintentar exactamente la misma hora que acababa de
+  fallar.
+- **`rgpd_aceptado = true` en los leads nuevos:** revisado, ya estaba
+  garantizado — el esquema de `POST /api/leads` exige `rgpdAceptado === true`
+  con `.refine()`; un envío con la casilla sin marcar nunca llega a
+  `createLead()`, se rechaza con 400 antes. **Sin cambios de código**, solo
+  confirmado por lectura.
+
+**4) Zona horaria** — sin tocar, tal como se pidió. Sigue sin conversión
+real de zona (el dato en Postgres es `time` sin huso), con la etiqueta
+"Hora (España)" visible en el selector. La única pieza nueva que sí
+calcula la hora real de España es el filtro de "horas ya pasadas" del
+punto 3 — pero es un cálculo de la UI para decidir qué mostrar, no un
+cambio del modelo de datos.
+
+**5) Verificado en ambos repos:** `npx tsc --noEmit` 0 errores y
+`npx next build` exit 0 en `WebIdesie` (51 rutas, `/api/leads` y
+`/api/leads/disponibilidad` presentes) y en `idesie-crm` (11 rutas, todas
+dinámicas). Ninguno de los dos build necesitó Supabase en marcha (todas las
+páginas del CRM son `force-dynamic`; en la web, los mismos avisos de "modo
+mock" de siempre, sin cambios).
+
+**6) Despliegue automático — respuesta honesta, con lo que se pudo
+confirmar y lo que no:**
+- `idesie-crm`: **no tiene remoto de git** (`git remote -v` vacío) y no
+  existe carpeta `.vercel/` — no hay ningún sitio al que un `push` pudiera
+  llegar. No se despliega solo porque no hay dónde.
+- `WebIdesie`: tiene remoto `github.com/itidesie/WebIdesie.git`, rama
+  actual `security/critical-fixes-2026-09` (no `main`). No existe carpeta
+  `.vercel/` en el repo ni `vercel.json`, así que no hay confirmación
+  local de que el proyecto esté conectado a Vercel ni de cuál es su rama de
+  producción configurada — eso vive en el panel de Vercel, no en este
+  repositorio, y no tengo acceso a él (la CLI de `vercel` no está
+  autenticada en esta máquina). Lo que sí es el comportamiento **por
+  defecto** de Vercel cuando un repo de GitHub está conectado: cualquier
+  `push` a cualquier rama genera un Preview Deployment automático; solo un
+  `push` a la rama configurada como "Production Branch" (casi siempre
+  `main`) despliega a producción. Si `main` es esa rama y esta rama no
+  está fusionada en `main`, un `push` de `security/critical-fixes-2026-09`
+  no debería tocar producción — pero es una inferencia a partir del
+  comportamiento estándar de Vercel, no una confirmación directa de la
+  configuración real de este proyecto. **Pide confirmación al cliente o
+  revisa el panel de Vercel** antes de dar esto por hecho.
+
+**Deliberadamente sin ejecutar:** ningún script SQL, ni en el Supabase
+local (por la instrucción explícita de no levantar procesos) ni en
+producción. Ningún commit. Ningún servidor tocado — el de `WebIdesie` en el
+puerto 3000 sigue exactamente como estaba, sin reiniciar (Turbopack recarga
+en caliente los archivos editados solo).
+
+### 2026-09-28 (54) — Calendly retirado del sitio; formulario propio "LeadCaptureForm" (agendar llamada, opcional) en /landing y /contact-page; revisión del CRM
+
+Encargo del cliente: quitar cualquier rastro de Calendly del sitio; en su
+lugar, un formulario propio "súper moderno" donde agendar llamada es
+**opcional** (quien quiere, agenda hora; quien no, solo deja sus datos);
+revisar que todo llegue bien al CRM.
+
+**Dónde vivía Calendly, y qué lo sustituye:**
+- `/landing`, sección `#agenda` (id `agenda`): el `<iframe>` de
+  `calendly.com/idesie-info/30min` (con `embed_domain` construido en
+  cliente) y el listener de `postMessage` para `calendly.event_scheduled`
+  (disparaba `Schedule`+`Lead` de Meta) — **eliminados por completo**.
+  Sustituidos por `<LeadCaptureForm origen="Landing · Agenda" />`. Las 9
+  repeticiones del CTA "Agendar mi llamada gratuita" (hero, CTAs de
+  programa, barra flotante, CTA final) pasan a "Solicitar información" —
+  seguían prometiendo literalmente "agendar llamada" cuando el destino real
+  ahora es un formulario donde eso es solo una opción. El propio píxel de
+  Meta se dispara igual (`Lead`, y `Schedule` además si se agendó llamada)
+  pero ahora desde dentro de `LeadCaptureForm`, no desde un listener de
+  `postMessage` de un dominio externo.
+- `/contact-page`, pestaña "Agendar Llamada" (con el mismo iframe de
+  Calendly): pestaña renombrada a "Solicitar Información", mismo
+  `LeadCaptureForm` reutilizado, con `programaPreseleccionado` desde
+  `?programa=` y `origen` construido con el `?motivo=` si llegó de un CTA
+  de página de programa.
+
+**Formulario nuevo, `components/lead-capture-form.tsx`** — reutilizable
+desde cualquier página (recibe `origen` y, opcionalmente,
+`programaPreseleccionado`/`onSuccess`/`className`):
+- Campos obligatorios: nombre, apellidos, email, teléfono. Opcionales:
+  programa de interés (select MBIM/MBBE/EMBIM/Online), mensaje libre.
+- **Agendar llamada — bloque opcional**, con su propio interruptor
+  (`Switch`): al activarlo se despliega (con la misma técnica de
+  `grid-template-rows` + `--ease-spring` que ya usa `.faq-panel`) un
+  selector de los próximos 14 días y las 10 franjas de `LEAD_TIME_SLOTS`
+  (10:00–19:00), consultando disponibilidad real contra
+  `GET /api/leads/disponibilidad` y deshabilitando las horas ya ocupadas.
+  Si el interruptor está apagado, fecha y hora ni se piden ni se envían.
+- RGPD obligatorio (enlaza a `/politica-privacidad-page`), honeypot
+  (`HoneypotField`), estado de éxito con texto distinto según si se agendó
+  llamada o no.
+- Construido sobre los mismos primitivos ya "subidos de nivel" del resto
+  del sitio (`Input`/`Textarea`/`Select`/`Switch` de `components/ui/*`,
+  token `--color-brand`) — mismo nivel de acabado que `AdmisionModal`
+  (icono por campo, tarjeta propia para el RGPD), no una cuarta identidad
+  visual nueva.
+
+**Backend — `/api/leads` y `/api/leads/disponibilidad` reactivados.**
+Estaban devolviendo `410 Gone` desde la sesión de seguridad de 2026-09-25
+("sin consumidores desde que `/landing` pasó a usar Calendly" — ver el
+propio comentario de desactivación, que pedía explícitamente añadir rate
+limiting + honeypot al reactivarlos). Recuperados del historial de git
+(commit anterior a `f615bb6`) y con eso añadido:
+- Rate limiting nuevo en `lib/rate-limit.ts`: `leadsIp` (5/hora) y
+  `leadsDisponibilidadIp` (30/15 min, más laxo por no exponer datos
+  personales).
+- Honeypot vía `parseJsonBody` (mismo patrón que `/api/contact`/`/api/admision`).
+- `POST /api/leads` valida con zod que, si `agendarLlamada` es `true`,
+  `sessionDate`/`sessionTime` sean obligatorios (`.refine()`); si es
+  `false`, se ignoran aunque lleguen — nunca se guarda una franja a medias.
+  RGPD obligatorio con el mismo patrón ya usado en `/api/admision`.
+
+**Migración de base de datos — `scripts/037_leads_agenda_opcional.sql`,
+sin ejecutar todavía.** Aditiva, sin borrar ni renombrar nada:
+`session_date`/`session_time` dejan de ser `NOT NULL` (un lead sin llamada
+agendada las guarda como `NULL` — el índice único parcial `leads_slot_unico`
+de `scripts/033` no se ve afectado, Postgres nunca considera dos `NULL`
+iguales), y se añaden `mensaje text` y `rgpd_aceptado boolean not null
+default false`. **Pendiente: el cliente tiene que ejecutar este script en
+el SQL Editor de Supabase de producción** antes de que el formulario nuevo
+funcione contra datos reales — sin él, `POST /api/leads` fallaría en
+cualquier envío sin llamada agendada (violaría el `NOT NULL` heredado).
+
+**Revisión del CRM (`idesie-crm`), pedida explícitamente para que "llegue
+todo bien":**
+- La entrada sigue llegando por la misma vía que ya existía —
+  `crm.v_entradas_web` ya mapea `public.leads` como tipo `lead_legacy`
+  (nombre heredado de cuando esa tabla solo alimentaba el `/landing`
+  antiguo) — **cero cambios de esquema en el CRM**: `mensaje` y
+  `rgpd_aceptado` llegan solos dentro del `payload` (`to_jsonb(t)`), sin
+  tocar la vista.
+- 🔴 **Hallazgo, corregido**: el CRM llevaba la etiqueta "Lead (histórico)"
+  para este tipo — cierto cuando era el rastro de un formulario ya
+  eliminado, pero **falso ahora que es el flujo en vivo de toda la web**.
+  Corregido en `idesie-crm` (`lib/tipos.ts`: etiqueta "Solicitud de
+  información", badge `info`; `components/tipo-icono.tsx`: icono `Send` en
+  vez de `History`, tono azul en vez de gris apagado;
+  `components/entrada-detalle.tsx`: fila "Llamada" siempre visible con
+  "Sin agendar" en vez de ocultarse cuando no hay fecha, más las filas
+  nuevas "Mensaje" y "Estado" con badge).
+- Migración copiada también a `idesie-crm/supabase/migrations/044_leads_agenda_opcional.sql`
+  (mismo patrón que 020–036: los scripts de la web se copian tal cual en la
+  secuencia de migraciones del CRM) — solo para que el Supabase **local**
+  del CRM refleje el esquema real; en producción la aplica el cliente
+  directamente en el proyecto de la web, nunca desde aquí.
+- **Verificado de extremo a extremo contra el Supabase local del CRM**:
+  tras `pnpm db:reset` (con la migración 044 aplicada), se insertaron dos
+  leads de prueba directamente en `public.leads` — uno sin llamada
+  (`session_date`/`session_time` `NULL`, con `mensaje`) y otro con llamada
+  agendada — se ejecutó `crm.procesar_entradas()` y ambos aparecieron en
+  `crm.v_bandeja` con los campos correctos. Con Chrome real (usuario de
+  prueba `admin@idesie.test`, **contra el Supabase local, nunca contra
+  producción**): la bandeja mostró el resumen nuevo ("Solicitud de
+  información · MBIM · sin llamada agendada" / "· llamada el 2026-09-30
+  11:00"), y el panel de detalle de cada una mostró exactamente lo
+  esperado (fila "Llamada" con "Sin agendar" y el "Mensaje" en una, badge
+  con fecha+hora en la otra). Las dos filas de prueba y sus contactos se
+  borraron al terminar.
+- ⚠️ **Un servidor de desarrollo del CRM que ya estaba corriendo en el
+  puerto 3001, apuntando a producción**, se detuvo para poder hacer esta
+  prueba de forma aislada (nunca se leyó ni escribió nada en producción
+  desde esta sesión) y no se ha vuelto a levantar apuntando a producción —
+  si se quiere el CRM corriendo contra producción de nuevo, hay que
+  pedirlo explícitamente.
+
+**Deliberadamente sin tocar**: el email de confirmación sigue siendo el
+HTML inline de `lib/leads-db.ts` (no se conectó `emails/lead-confirmation.tsx`,
+que sigue sin usar); las páginas de máster (MBIM/MBBE/EMBIM/Online) no
+enlazaban a Calendly directamente, así que no necesitaron cambios; los
+textos de las secciones de `/landing` ajenos a "agendar llamada" no se
+tocaron.
+
+**Verificado:** `npx tsc --noEmit` 0 errores, `npx next build` exit 0 (51
+rutas, `/api/leads` y `/api/leads/disponibilidad` de vuelta en el listado
+tras estar ausentes desde el 410). `grep -rniI calendly` sobre todo el
+código (`.ts`/`.tsx`/`.css`/`.mjs`) confirma cero referencias vivas —
+solo quedan comentarios que explican qué se sustituyó, como registro.
+`next.config.mjs` sin tocar, nada desplegado.
+
+### 2026-09-27 (53) — /landing "MBIM 2.0": rediseño visual completo a "Premium SaaS moderno"
+
+Encargo del cliente: "rediseño visual súper enfocado en vender, moderno,
+estilo limpio". Antes de tocar nada se preguntó explícitamente por la
+dirección (la versión "MBIM 2.0" de (51) ya tenía una identidad muy
+elaborada — retícula de dibujo técnico, edificio 3D animado en el hero,
+chips en monoespaciada con bordes cuadrados, degradados azul→violeta — que
+no encajaba con "limpio"). El cliente eligió **"Premium SaaS moderno"**
+(fondo blanco predominante, tarjetas con sombra suave y esquinas
+redondeadas, un único azul de marca + ámbar como acento puntual, sin
+retículas ni violeta) sobre otras dos direcciones propuestas ("Blueprint
+aligerado" y "Oscuro editorial de alto impacto").
+
+**Cero cambios de contenido real** — ni un texto, cifra, testimonio, precio,
+fecha o dato del programa se tocó. Solo el sistema visual
+(`app/landing/landing-client.tsx`, la constante `LANDING_STYLES` reescrita
+por completo) y algunos elementos puramente decorativos del JSX:
+
+- **Hero**: el edificio 3D animado (`.b3d-*`, `.hero-building*`,
+  `.hero-mast`, `.hero-beacon`, `.hero-window`) y las retículas de dibujo
+  técnico (`.grid-bg`, con máscaras radiales) se eliminaron por completo,
+  del JSX y del CSS. La columna derecha del hero pasa a un panel oscuro
+  limpio (degradado azul→negro + dos manchas difuminadas azul/ámbar) con
+  las mismas 3 tarjetas reales de siempre (plazas convocatoria, testimonio
+  de Agustina, contrato garantizado) apiladas en `.hero-visual-stack`, sin
+  posicionamiento absoluto ni inclinación 3D — antes flotaban ancladas
+  sobre el edificio.
+- Botones: de esquinas cuadradas (`border-radius:2px`) a píldora
+  (`border-radius:999px`), con sombra azul suave en vez de borde marcado.
+- Degradados azul→violeta (`#7c3aed`) retirados del todo — textos con
+  acento pasan a azul de marca sólido (`.accent`, `.problema-grad`,
+  `.metodologia-grad`, `.ai-title em`, `.programa-title-accent`), y donde
+  hacía falta un segundo color de apoyo se usa el ámbar ya existente
+  (`--secondary`) en vez de inventar un tercer color — visible en el
+  segmento "prácticas" de la línea de tiempo del contrato
+  (`.contract-timeline-seg--intern`) y en la leyenda de reparto de ECTS del
+  programa (los 3 `<span style={{background:...}}>` inline de
+  `programa-summary-dot`, antes `#7c3aed`/`#c4b3ff`, ahora
+  `var(--amber)`/`var(--dim)`).
+- Comparativa "El problema", bloque de contrato de Metodología y tarjeta
+  flagship del módulo de IA (antes negro con marquesina arcoíris animada):
+  pasan a un degradado sólido de marca (azul → azul fuerte) con sombra
+  brand, sin retículas ni animación de "barrido de color" infinita
+  (`mbim2-accent-shift`, eliminada).
+- CTA final: pasa de franja azul a sangre a una **tarjeta redondeada
+  inset** (`.cta-final-card`, `border-radius:28px`) sobre fondo blanco de
+  página — patrón habitual en SaaS premium (Vercel, Stripe) en vez de una
+  banda de color de borde a borde.
+- Secciones 6-11 (certificación, summit, resultados, testimonios,
+  admisión), que ya usaban `.glass-card` (blur + borde fino), pasan a
+  tarjeta blanca sólida con sombra suave — mismo nombre de clase, sin tocar
+  el JSX de esas 6 secciones en absoluto.
+
+**Por qué fue seguro quitar el edificio 3D y las retículas sin tocar la
+coreografía GSAP**: ningún `useGsapEffect` fuera del propio `heroRef` los
+referenciaba, y dentro de `heroRef` los `querySelectorAll(".grid-bg")` /
+`querySelectorAll(".b3d-box, .hero-mast")` que sí los animaban simplemente
+no encuentran nada tras el cambio — un tween de GSAP sobre una selección
+vacía no hace nada ni lanza error. El resto de la coreografía (barra de
+plazas, subrayados que se dibujan, sellado de credenciales, carril del
+summit, barra flotante de CTA) se dejó intacta.
+
+**Verificado**: `rm -rf .next/types && npx tsc --noEmit` 0 errores,
+`npx next build` exit 0 (`/landing` sigue prerenderizada como estática).
+HTML servido confirmado sin `grid-bg`/`b3d-box`/`corner-mark`/`7c3aed`
+(grep), con `hero-visual-glow`/`cta-final-card` presentes y el titular y la
+fecha reales (`24 de octubre de 2026`) intactos. **Revisado con Chrome
+real** (hero, sección de IA, certificación): fondo blanco, botones píldora,
+acento azul, tarjetas del hero con sombra suave y el testimonio/contrato
+reales, animaciones de entrada disparando correctamente.
+
+⚠️ **Hallazgo colateral durante la verificación con Chrome, no introducido
+por este cambio** (la clase `.nav{position:sticky}` no se tocó): al saltar
+a una sección por su ancla (`href="#ia"`, tanto haciendo clic en el menú
+como navegando directamente a `/landing#ia`), la nav fija desaparece del
+todo durante unos instantes — no es un problema de z-index ni de la nueva
+CSS, se reproduce igual con la nav en su estado anterior. Parece un
+desajuste entre el salto nativo del navegador a un ancla y el estado
+interno de Lenis (`SiteMotionProvider`, scroll suave global del sitio).
+No investigado a fondo ni arreglado — fuera del alcance de un encargo de
+rediseño visual; anotado por si se quiere revisar en una sesión aparte.
 
 ### 2026-09-25 (52) — Endurecimiento de seguridad (rama `security/critical-fixes-2026-09`)
 

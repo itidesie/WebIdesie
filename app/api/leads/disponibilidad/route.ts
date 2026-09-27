@@ -1,17 +1,61 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
+import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { isMock, logMock } from "@/lib/mock-mode"
+import { checkRateLimit, getClientIp, RATE_LIMITS, tooManyRequestsResponse } from "@/lib/rate-limit"
+import { LEAD_TIME_SLOTS } from "@/lib/leads-time-slots"
+
+const fechaSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha no válida")
+  .refine((v) => !Number.isNaN(new Date(`${v}T00:00:00`).getTime()), "Fecha no válida")
 
 /**
- * 🔒 DESACTIVADO (410 Gone). Endpoint sin uso.
+ * Franjas libres para una fecha — consultado por el nuevo formulario de
+ * agenda opcional cada vez que la persona elige un día distinto.
  *
- * Lo consultaba el selector de horarios (`TimeSlotPicker`) del antiguo
- * formulario de sesión informativa de `/landing`, sustituido por Calendly. Es
- * parte del mismo sistema que `POST /api/leads` (ver ese archivo): ningún
- * código lo llama. Además hacía una consulta a la base de datos por petición,
- * sin autenticación ni límite. La tabla `leads` no se toca.
+ * Pública, sin autenticación (como `/api/productos`): no devuelve ningún
+ * dato personal, solo qué horas de las 10 posibles ya están ocupadas ese
+ * día. Es una comprobación de UX, no la barrera real contra dobles
+ * reservas — esa es el índice único parcial de `scripts/033` en la propia
+ * tabla `leads`; esta ruta puede decir "libre" y aun así el POST siguiente
+ * puede chocar con otro lead que reservó un instante antes (ver 409 en
+ * `POST /api/leads`).
+ *
+ * 🔒 Reactivada el 2026-09-28 junto con `/api/leads` — con el mismo rate
+ * limiting por IP que pedía el comentario de desactivación.
  */
-export async function GET() {
-  return NextResponse.json(
-    { error: "gone", message: "Este endpoint ha sido retirado." },
-    { status: 410, headers: { "Cache-Control": "no-store" } },
-  )
+export async function GET(request: NextRequest) {
+  const limit = await checkRateLimit(RATE_LIMITS.leadsDisponibilidadIp, getClientIp(request.headers))
+  if (!limit.allowed) return tooManyRequestsResponse(limit.retryAfterSeconds)
+
+  const fechaParam = request.nextUrl.searchParams.get("fecha")
+  const parsed = fechaSchema.safeParse(fechaParam)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Fecha no válida" }, { status: 400 })
+  }
+  const fecha = parsed.data
+
+  if (isMock("SUPABASE_SERVICE_ROLE_KEY")) {
+    logMock("Leads", `disponibilidad consultada en mock → ${fecha}: las 10 franjas libres`)
+    return NextResponse.json({ disponibles: LEAD_TIME_SLOTS })
+  }
+
+  const supabase = getSupabaseServerClient()
+  const { data, error } = await supabase
+    .from("leads")
+    .select("session_time")
+    .eq("session_date", fecha)
+    .neq("status", "descartado")
+
+  if (error) {
+    console.error("[api/leads/disponibilidad] Error al consultar Supabase:", error.message)
+    return NextResponse.json({ error: "No se pudo comprobar la disponibilidad" }, { status: 500 })
+  }
+
+  const ocupadas = new Set((data ?? []).map((row) => String(row.session_time).slice(0, 5)))
+  const disponibles = LEAD_TIME_SLOTS.filter((slot) => !ocupadas.has(slot))
+
+  return NextResponse.json({ disponibles })
 }

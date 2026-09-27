@@ -15,10 +15,12 @@ const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
  * de alcance/privacidad aparte.
  *
  * `trackMetaPixelEvent()` la llaman `components/admision-modal.tsx`
- * (compartido entre las 4 páginas de máster + `/landing`) y
- * `landing-client.tsx` (reserva de Calendly, descarga de catálogo). Fuera
- * de `/landing` es un no-op seguro: sin `<MetaPixel />` montado, `window.fbq`
- * no existe y la función sale sin hacer nada.
+ * (compartido entre las 4 páginas de máster + `/landing`),
+ * `components/lead-capture-form.tsx` (solicitud de información, con o sin
+ * llamada agendada — sustituye al embed de Calendly desde 2026-09-28) y
+ * `landing-client.tsx` (descarga de catálogo). Fuera de `/landing` es un
+ * no-op seguro: sin `<MetaPixel />` montado, `window.fbq` no existe y la
+ * función sale sin hacer nada.
  *
  * Doble guardia contra ensuciar los datos reales de Meta con pruebas:
  * 1. `NODE_ENV !== "production"` — nunca en `pnpm dev`.
