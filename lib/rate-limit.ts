@@ -35,12 +35,6 @@ export interface RateLimitResult {
 
 /** Límites en un solo sitio, para que sean fáciles de revisar y ajustar. */
 export const RATE_LIMITS = {
-  // Login de admin. Dos contadores complementarios (ver /api/admin/auth):
-  //  · IP + username: 5 fallos / 15 min → bloquea el intento de adivinar UNA cuenta.
-  //  · solo IP: 15 fallos / 15 min → impide esquivar el anterior cambiando de
-  //    username en cada intento (cada username nuevo tendría su propio contador).
-  adminLoginUser: { bucket: "admin-login-ip-user", max: 5, windowSeconds: 15 * 60 },
-  adminLoginIp: { bucket: "admin-login-ip", max: 15, windowSeconds: 15 * 60 },
   contactIp: { bucket: "contact-ip", max: 5, windowSeconds: 60 * 60 },
   admisionIp: { bucket: "admision-ip", max: 5, windowSeconds: 60 * 60 },
   candidaturaIp: { bucket: "candidatura-ip", max: 5, windowSeconds: 60 * 60 },

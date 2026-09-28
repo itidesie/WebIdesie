@@ -1,8 +1,7 @@
 User-agent: *
 Allow: /
 
-# Disallow admin and private areas
-Disallow: /admin/
+# Disallow private areas (/admin ya no existe — el panel se eliminó por completo)
 Disallow: /api/
 Disallow: /checkout/
 Disallow: /_next/

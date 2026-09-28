@@ -1,14 +1,13 @@
 import Header from "@/components/header"
 import FooterSection from "@/components/footer-section"
 import { Button } from "@/components/ui/button"
-import { Calendar, User, ArrowLeft, ArrowRight, Edit, Tag } from "lucide-react"
+import { Calendar, User, ArrowLeft, ArrowRight, Tag } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { getBlogPostBySlugAndDate, getAllBlogPostsWithDates, getRelatedPosts, generatePostUrl } from "@/app/blog/actions"
 import { notFound } from "next/navigation"
 import { sanitizeHtml } from "@/lib/sanitize-html"
 import { addHeadingIds } from "@/lib/extract-toc"
-import { isAdminAuthenticated } from "@/lib/admin-auth"
 import { ArticleToc } from "@/components/blog/article-toc"
 
 interface BlogPostPageProps {
@@ -53,10 +52,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   if (!post) {
     notFound()
   }
-
-  // El botón "Editar Artículo" solo debe verlo un admin con sesión activa —
-  // antes se renderizaba para cualquier visitante público. Ver CLAUDE.md.
-  const isAdmin = await isAdminAuthenticated()
 
   const sanitizedContent = sanitizeHtml(post.content)
   const { html: contentWithIds, toc } = addHeadingIds(sanitizedContent)
@@ -124,18 +119,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 dangerouslySetInnerHTML={{ __html: contentWithIds }}
               />
 
-              {isAdmin && (
-                <div className="mt-12 text-center">
-                  <Button
-                    asChild
-                    className="px-8 py-3 text-lg bg-[#006cff] hover:bg-[#005bbd] text-white rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
-                  >
-                    <Link href={`/admin/posts/edit/${post.slug}`}>
-                      <Edit className="w-5 h-5 mr-2" /> Editar Artículo
-                    </Link>
-                  </Button>
-                </div>
-              )}
             </div>
 
             {hasToc && <ArticleToc entries={toc} />}
