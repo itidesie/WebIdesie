@@ -8,7 +8,7 @@
 
 **Stack:** Next.js 16.2 (App Router, Turbopack) · React 19 · TypeScript ·
 Tailwind CSS v4 · shadcn/ui (Radix) · pnpm
-**Última actualización:** 2026-09-28 (56)
+**Última actualización:** 2026-09-28 (57)
 
 ---
 
@@ -5266,6 +5266,81 @@ los archivos que toques.
 ---
 
 ## 7. Registro de cambios
+
+### 2026-09-28 (57) — /landing "MBIM 2.0": segunda pasada visual, con referencia de otro proyecto del cliente
+
+Encargo del cliente: coger como referencia el landing y el formulario de
+`marketing/flowengine` (otro proyecto suyo, carpeta local, **no forma parte
+de este repositorio**) — tipografía, formas y estructura — y aplicarlo al
+landing de IDESIE. Mismo criterio que la pasada de (53): cero cambios de
+contenido real, solo sistema visual.
+
+⚠️ **Hallazgo de coordinación, antes de tocar nada**: al empezar esta
+pieza, `app/landing/landing-client.tsx` ya no coincidía con lo que dejó
+(53) — otra sesión de Claude Code sobre este mismo repositorio (`webidesie-ea`,
+ver `ListAgents`) había hecho commit (`318a520`, ver (54)-(56)) de un
+cambio real y bien documentado: `LeadCaptureForm`
+(`components/lead-capture-form.tsx`) sustituye al embed de Calendly en
+`/landing` y `/contact-page`. Ese commit incluía además, sin haberlo pedido
+nadie en esta sesión, todo el trabajo de (53) — confirma que ambas
+sesiones comparten el mismo checkout de trabajo, no worktrees aislados. Se
+releyó el archivo real por completo antes de tocar nada más, para no
+pisarlo. **`LeadCaptureForm` no se tocó** — solo su contenedor
+(`.agenda-form-wrap`) gana el mismo tratamiento de tarjeta que el resto de
+la página.
+
+**Qué se tomó de flowengine, concretamente:**
+- **Tipografía**: itálica serif (Instrument Serif, fuente nueva) para la
+  palabra de acento dentro de cada titular (antes texto plano en azul) y
+  para la cita de los testimonios (antes Space Grotesk en negrita). Cuerpo
+  de texto pasa de IBM Plex Sans a DM Sans (fuente nueva) — IBM Plex Sans
+  se queda como variable secundaria sin usar en la base, IBM Plex Mono
+  sigue igual para chips/etiquetas de datos.
+- **Formas**: cada `<section>` deja de ser a sangre con una línea divisoria
+  fina y pasa a ser su propia "losa" flotante — translúcida con blur,
+  esquinas muy redondeadas (32px), borde y sombra suaves, con margen
+  alrededor — sobre un fondo nuevo de dos manchas difuminadas (azul +
+  ámbar) en vez de blanco plano (`.lp-bg`, fixed, detrás de todo). El hero
+  hereda el mismo tratamiento con `overflow:hidden` en vez de redefinir sus
+  propias esquinas. Las insignias ("eyebrow") cambian de una línea previa a
+  un punto de color, como en flowengine. Los 3 pasos de admisión pasan de
+  número pequeño + barra lateral a número gigante (Bricolage, 52px) + borde
+  superior de acento — dejan de ser tarjetas con sombra.
+- **Losa de acento reutilizable** (`.section-accent`, mismo mecanismo que
+  `.lp-section--army` de flowengine: redefine `--ink`/`--muted`/`--dim`/
+  `--line` para que el resto de reglas ya tokenizadas hereden el modo claro
+  automáticamente): aplicada a **Metodología** y al **CTA final** — antes
+  eran una tarjeta azul incrustada en una sección blanca; ahora la sección
+  entera es la losa azul, igual que flowengine reutiliza su misma losa
+  oscura para su oferta destacada y su CTA final. Dentro de Metodología, la
+  tarjeta del contrato ("16 meses") se invierte a **blanca sobre la losa
+  azul** — mismo patrón que el `lp-form-card` blanco de flowengine flotando
+  sobre su losa oscura. Ajuste necesario no evidente hasta verlo: el botón
+  primario (`.btn-signal`) dentro de `.section-accent` pasa a blanco con
+  texto azul — un botón azul sobre una losa azul se difuminaba, sin
+  contraste real.
+- **Cabecera + progreso**: `.nav` se compacta y gana sombra al hacer scroll
+  (`headerScrolled`, un solo listener con throttle por
+  `requestAnimationFrame`) y una franja fija arriba de la ventana marca el
+  progreso de lectura (`--progress`, mismo cálculo `scrollY / (scrollHeight
+  - innerHeight)` que usa flowengine). Ninguno de los dos usa GSAP —
+  es puramente cosmético, no justifica cargar ScrollTrigger para esto.
+
+**Verificado**: `rm -rf .next/types && npx tsc --noEmit` 0 errores,
+`npx next build` exit 0 (`/landing` sigue prerenderizada como estática).
+HTML servido comprobado por `grep`: `.section-accent` presente en las 2
+secciones esperadas, `.cta-final-card` (el wrapper retirado) ausente por
+completo, `.agenda-form-wrap` y el `<form>` real de `LeadCaptureForm`
+presentes, `.lp-bg`/`.scroll-progress` presentes, las 2 fuentes nuevas
+(`dm_sans_*`/`instrument_serif_*`) cargadas en el `<div>` raíz, titular y
+fecha reales (`24 de octubre de 2026`) intactos.
+
+⚠️ **No verificado con Chrome real en esta sesión** — la extensión estuvo
+conectada al principio (se usó para verificar (53), con capturas reales del
+hero funcionando correctamente) pero se desconectó antes de poder repetir
+la comprobación visual de esta segunda pasada. Pendiente de que el cliente
+lo confirme en su navegador antes de darlo por cerrado — mismo criterio que
+otras piezas de esta sesión con la extensión inestable.
 
 ### 2026-09-28 (56) — Migración 045 del CRM verificada contra Supabase local; commits en ambos repos, sin push
 

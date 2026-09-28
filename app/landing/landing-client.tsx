@@ -12,24 +12,44 @@ import { LeadCaptureForm } from "@/components/lead-capture-form"
 /**
  * 2026-09-27 — Rediseño visual completo ("Premium SaaS moderno"), pedido
  * explícito del cliente: "súper enfocado en vender, moderno, estilo limpio".
- * Dirección elegida entre 3 propuestas (ver CLAUDE.md) sobre la versión
- * anterior ("MBIM 2.0", réplica fiel de un mockup de blueprint técnico:
- * retículas de dibujo técnico, edificio 3D animado, chips mono con bordes
- * cuadrados, degradados azul→violeta). Esta pasada NO toca ni un carácter
- * de contenido real (textos, cifras, testimonios, programa, precios,
- * fechas) — solo el sistema visual: fondo blanco predominante, tarjetas con
- * sombra suave y esquinas redondeadas, un único azul de marca + ámbar como
- * acento puntual (sin violeta), botones tipo píldora, sin retículas de
- * dibujo técnico ni el edificio 3D del hero (sustituido por una pila de
+ * Fondo blanco predominante, tarjetas con sombra suave y esquinas
+ * redondeadas, un único azul de marca + ámbar puntual (sin violeta),
+ * botones píldora, sin retículas de dibujo técnico ni el edificio 3D del
+ * hero de la versión "MBIM 2.0" original (sustituido por una pila de
  * tarjetas limpias con la misma información real: plazas, testimonio,
- * contrato). Toda la coreografía GSAP (`use*Ref` más abajo) seguía
- * intacta: los elementos puramente decorativos que se retiran del JSX
- * (`.grid-bg`, `.corner-mark`, el edificio `.b3d-*`) no los anima ningún
- * otro flujo de negocio — sus `querySelectorAll` sencillamente no
- * encuentran nada y no hacen nada, sin errores.
+ * contrato).
  *
- * Igual que en la versión anterior, el `<h1>` del hero se sigue animando
- * solo con CSS (`.hero-line`/`.hero-fade`) para no comprometer el LCP.
+ * 2026-09-28 — Segunda pasada visual, con referencia explícita del cliente:
+ * el landing y el formulario de otro proyecto suyo (`marketing/flowengine`,
+ * carpeta local, no forma parte de este repositorio). Tomado de ahí:
+ * - Tipografía: itálica serif (Instrument Serif) para la palabra de acento
+ *   dentro de cada titular y para la cita de los testimonios — antes texto
+ *   plano en azul; cuerpo pasa de IBM Plex Sans a DM Sans (IBM Plex Sans
+ *   queda como variante secundaria, se sigue usando en el resto del sitio).
+ * - Formas: cada sección es ahora una "losa" flotante con esquinas muy
+ *   redondeadas, borde y sombra suaves, con margen entre ellas — en vez de
+ *   secciones a sangre separadas por una línea divisoria fina. Insignias
+ *   ("eyebrow") con un punto de color en vez de una línea. Los 3 pasos de
+ *   admisión pasan de número pequeño + barra lateral a número gigante +
+ *   borde superior de acento. Metodología y el CTA final se convierten en
+ *   losas de acento azul de sección completa (antes una tarjeta azul
+ *   incrustada en una sección blanca) — mismo patrón que el original usa
+ *   para su oferta destacada y su CTA final. Cabecera que se compacta al
+ *   hacer scroll + barra de progreso de lectura arriba del todo.
+ * - El formulario: el propio `LeadCaptureForm` (tarjeta blanca de shadcn/ui,
+ *   ya construida y verificada en otra sesión — no se toca, es compartida
+ *   con `/contact-page`) solo gana un contenedor a juego con el resto de
+ *   losas de la página (`.agenda-form-wrap`).
+ * Ninguna de las dos pasadas tocó un solo carácter de contenido real
+ * (textos, cifras, testimonios, programa, precios, fechas).
+ *
+ * Toda la coreografía GSAP (`use*Ref` más abajo) sigue intacta: los
+ * elementos puramente decorativos que se retiraron del JSX en la primera
+ * pasada (`.grid-bg`, `.corner-mark`, el edificio `.b3d-*`) no los anima
+ * ningún otro flujo de negocio — sus `querySelectorAll` sencillamente no
+ * encuentran nada y no hacen nada, sin errores. El `<h1>` del hero se sigue
+ * animando solo con CSS (`.hero-line`/`.hero-fade`) para no comprometer el
+ * LCP.
  */
 
 const LANDING_STYLES = `
@@ -52,13 +72,17 @@ const LANDING_STYLES = `
   --radius-lg:28px;
   --radius-md:18px;
   --radius-sm:12px;
+  --radius-slab:32px;
+  --slab-gap:14px;
   --shadow-soft:0 24px 48px -28px rgba(16,24,40,0.18);
   --shadow-soft-sm:0 12px 28px -18px rgba(16,24,40,0.16);
   --shadow-brand:0 24px 48px -20px rgba(0,108,255,0.38);
+  --font-body:var(--font-dmsans), var(--font-ibm-plex-sans), sans-serif;
+  --font-accent:var(--font-instrument), Georgia, serif;
   margin:0;
-  background:var(--bg);
+  background:#eef2f8;
   color:var(--ink);
-  font-family:var(--font-ibm-plex-sans), sans-serif;
+  font-family:var(--font-body);
   font-size:17px;
   line-height:1.65;
   -webkit-font-smoothing:antialiased;
@@ -76,15 +100,42 @@ const LANDING_STYLES = `
 .mbim2-landing ul{margin:0;padding:0;list-style:none;}
 .mbim2-landing p{margin:0;}
 
+/* ---------- fondo de página: manchas suaves detrás de las losas ----------
+   Referencia: el landing de flowengine flota sus secciones ("losas"
+   redondeadas) sobre un fondo con textura propia — aquí, en vez de su
+   verde militar, dos manchas difuminadas en azul de marca + ámbar sobre un
+   gris muy claro, para que el hueco entre losas no sea blanco plano. */
+.mbim2-landing .lp-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.mbim2-landing .lp-bg span{position:absolute;border-radius:50%;filter:blur(90px);opacity:0.5;}
+.mbim2-landing .lp-bg span:first-child{width:640px;height:640px;top:-220px;left:-160px;background:color-mix(in oklab, var(--blueprint) 30%, transparent);}
+.mbim2-landing .lp-bg span:last-child{width:520px;height:520px;bottom:-200px;right:-140px;background:color-mix(in oklab, var(--amber) 26%, transparent);}
+.mbim2-landing > *:not(.lp-bg){position:relative;z-index:1;}
+
+/* ---------- barra de progreso de lectura ---------- */
+.mbim2-landing .scroll-progress{
+  position:fixed;top:0;left:0;right:0;z-index:70;height:3px;
+  transform:scaleX(var(--progress, 0));transform-origin:0 50%;
+  background:linear-gradient(90deg, var(--blueprint), var(--amber));
+  pointer-events:none;
+}
+@media(prefers-reduced-motion:reduce){.mbim2-landing .scroll-progress{transition:none;}}
+
 /* ---------- nav ---------- */
 .mbim2-landing .nav{
   position:sticky;top:0;z-index:50;
-  background:rgba(255,255,255,0.88);
+  background:rgba(255,255,255,0.78);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid transparent;
+  transition:background-color .3s ease, border-color .3s ease, box-shadow .3s ease;
 }
-.mbim2-landing .nav-inner{max-width:var(--maxw);margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+.mbim2-landing .nav.is-scrolled{
+  background:rgba(255,255,255,0.92);
+  border-color:var(--line);
+  box-shadow:var(--shadow-soft-sm);
+}
+.mbim2-landing .nav-inner{max-width:var(--maxw);margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;transition:padding .25s ease;}
+.mbim2-landing .nav.is-scrolled .nav-inner{padding-block:10px;}
 .mbim2-landing .nav-brand{display:flex;align-items:baseline;gap:10px;}
 .mbim2-landing .nav-brand .school{font-size:11.5px;color:var(--muted);font-family:var(--font-ibm-plex-mono), monospace;letter-spacing:0.04em;}
 .mbim2-landing .nav-brand .name{font-family:var(--font-space-grotesk), sans-serif;font-weight:700;font-size:19px;}
@@ -93,7 +144,7 @@ const LANDING_STYLES = `
 .mbim2-landing .nav-links a:hover{color:var(--ink);border-color:var(--blueprint-line);}
 .mbim2-landing .btn{
   display:inline-flex;align-items:center;gap:8px;
-  font-family:var(--font-ibm-plex-sans), sans-serif;font-weight:600;font-size:14.5px;
+  font-family:var(--font-body);font-weight:700;font-size:14.5px;
   padding:12px 22px;border-radius:999px;cursor:pointer;border:1.5px solid transparent;
   transition:transform .16s var(--ease-out-quart, ease), background .18s, border-color .18s, box-shadow .18s, color .18s;
 }
@@ -137,7 +188,11 @@ const LANDING_STYLES = `
 .mbim2-landing .urgency-bar .sep{margin:0 10px;opacity:0.4;}
 
 /* ---------- hero ---------- */
-.mbim2-landing .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);padding:0;}
+/* Hereda de la sección genérica (fondo translúcido, borde, radio, sombra) —
+   solo anula el padding (controla su propio espaciado) y añade
+   overflow:hidden para que las dos columnas internas queden recortadas al
+   marco redondeado sin tener que redondear cada esquina a mano. */
+.mbim2-landing .hero{position:relative;overflow:hidden;padding:0;}
 .mbim2-landing .hero-inner{position:relative;z-index:2;}
 .mbim2-landing .hero-grid{
   position:relative;display:grid;
@@ -160,7 +215,7 @@ const LANDING_STYLES = `
   font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
   font-weight:700;font-size:clamp(32px, 3.4vw, 46px);line-height:1.08;letter-spacing:-0.03em;
 }
-.mbim2-landing .hero h1 .accent{color:var(--blueprint);}
+.mbim2-landing .hero h1 .accent{font-family:var(--font-accent);font-style:italic;font-weight:400;color:var(--blueprint-strong);letter-spacing:-0.01em;}
 .mbim2-landing .hero-cursor{display:inline-block;width:3px;height:0.78em;margin-left:4px;background:var(--blueprint);vertical-align:-0.1em;}
 @media(prefers-reduced-motion:no-preference){.mbim2-landing .hero-cursor{animation:mbim2-cursor-blink 1.05s steps(1) infinite;}}
 @keyframes mbim2-cursor-blink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
@@ -237,8 +292,27 @@ const LANDING_STYLES = `
 .mbim2-landing .hero-card-contract p{font-size:13.5px;line-height:1.4;color:rgba(255,255,255,0.85);margin:2px 0 0;}
 .mbim2-landing .hero-card-contract b{color:var(--white);}
 
-/* ---------- section shell ---------- */
-.mbim2-landing section{padding:100px 0;border-bottom:1px solid var(--line);position:relative;}
+/* ---------- section shell: losas flotantes (referencia flowengine) ----------
+   Cada sección deja de ser a sangre con una línea divisoria fina para
+   convertirse en su propia "losa" redondeada con margen alrededor —
+   translúcida con blur, flotando sobre el fondo de manchas (.lp-bg). El
+   hero recibe el mismo tratamiento (radio + overflow:hidden en vez de su
+   propio border-bottom): las dos columnas internas quedan recortadas al
+   marco redondeado automáticamente, sin tocar su propio CSS. */
+.mbim2-landing section{
+  width:calc(100% - 2 * var(--slab-gap));
+  max-width:1280px;
+  margin:var(--slab-gap) auto;
+  padding:100px 0;
+  background:rgba(255,255,255,0.7);
+  -webkit-backdrop-filter:blur(18px) saturate(1.1);
+  backdrop-filter:blur(18px) saturate(1.1);
+  border:1px solid rgba(255,255,255,0.8);
+  border-radius:var(--radius-slab);
+  box-shadow:0 34px 70px -46px rgba(16,24,40,0.4);
+  border-bottom:none;
+  position:relative;
+}
 .mbim2-landing .section-head{max-width:640px;margin-bottom:52px;}
 .mbim2-landing .section-head h2{font-size:clamp(28px,3.2vw,38px);line-height:1.15;}
 .mbim2-landing .section-head p{margin-top:16px;font-size:16.5px;color:var(--muted);}
@@ -250,14 +324,15 @@ const LANDING_STYLES = `
   font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;
   color:var(--blueprint);margin-bottom:20px;
 }
-.mbim2-landing .problema-eyebrow::before,.mbim2-landing .problema-eyebrow::after{content:"";width:26px;height:1px;background:var(--blueprint-line);}
+.mbim2-landing .problema-eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--blueprint);flex-shrink:0;}
+.mbim2-landing .problema-eyebrow::after{display:none;}
 .mbim2-landing .problema-head h2{
   font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:800;
   font-size:clamp(30px, 3.6vw, 44px);line-height:1.1;letter-spacing:-0.02em;
 }
 .mbim2-landing .problema-strike{position:relative;color:var(--dim);display:inline-block;}
 .mbim2-landing .problema-strike-line{position:absolute;left:0;right:0;top:52%;height:2px;background:var(--dim);transform-origin:left center;transform:scaleX(1);pointer-events:none;}
-.mbim2-landing .problema-grad{color:var(--blueprint);}
+.mbim2-landing .problema-grad{font-family:var(--font-accent);font-style:italic;font-weight:400;color:var(--blueprint-strong);letter-spacing:-0.01em;}
 .mbim2-landing .problema-lede{margin:18px auto 0;max-width:600px;font-size:16.5px;line-height:1.65;color:var(--muted);text-align:center;}
 .mbim2-landing .problema-lede-line{overflow:hidden;}
 .mbim2-landing .problema-aura{position:absolute;top:-100px;right:-100px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle, var(--blueprint-soft) 0%, transparent 70%);filter:blur(30px);pointer-events:none;}
@@ -311,53 +386,92 @@ const LANDING_STYLES = `
   .mbim2-landing .compare-old{margin-bottom:20px;}
 }
 
+/* ---------- losa de acento (Metodología, CTA final) ----------
+   Referencia flowengine: su oferta destacada y su CTA final reutilizan la
+   MISMA losa oscura ("army"), redefiniendo un puñado de custom properties
+   que el resto de reglas ya usa por herencia — en vez de reescribir cada
+   componente para un modo oscuro aparte. Aquí, en azul de marca (no ink
+   puro): mismo criterio de "no introduzcas un segundo negro" ya aplicado
+   en el resto del sitio, pero con más presencia que un simple degradado de
+   botón. */
+.mbim2-landing .section-accent{
+  --ink:#ffffff;
+  --muted:rgba(255,255,255,0.76);
+  --dim:rgba(255,255,255,0.58);
+  --line:rgba(255,255,255,0.2);
+  color:var(--ink);
+  background:linear-gradient(150deg, var(--blueprint), var(--blueprint-strong));
+  box-shadow:var(--shadow-brand);
+  border-color:transparent;
+}
+.mbim2-landing .section-accent::after{
+  content:"";position:absolute;top:-160px;right:-120px;width:480px;height:480px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);pointer-events:none;
+}
+.mbim2-landing .section-accent .wrap{position:relative;z-index:1;}
+/* Un botón azul sobre una losa azul se difumina — dentro de la losa de
+   acento, el CTA primario pasa a blanco con texto azul (mismo criterio que
+   ya usa el resto del sitio para CTAs sobre fondos de marca: máximo
+   contraste, sin introducir un tercer color solo para este botón). */
+.mbim2-landing .section-accent .btn-signal{background:var(--white);color:var(--blueprint-strong);box-shadow:0 20px 40px -20px rgba(0,0,0,0.35);}
+.mbim2-landing .section-accent .btn-signal:hover{background:var(--white);color:var(--blueprint);}
+.mbim2-landing .section-accent .cta-pulse-wrap::before{box-shadow:0 0 0 0 rgba(255,255,255,0.4);}
+@media(prefers-reduced-motion:no-preference){
+  .mbim2-landing .section-accent .cta-pulse-wrap::before{animation-name:mbim2-cta-pulse-light;}
+}
+@keyframes mbim2-cta-pulse-light{0%{box-shadow:0 0 0 0 rgba(255,255,255,0.4);}70%{box-shadow:0 0 0 14px rgba(255,255,255,0);}100%{box-shadow:0 0 0 14px rgba(255,255,255,0);}}
+
 /* ---------- Metodología ---------- */
 .mbim2-landing .metodologia-head{max-width:980px;margin-bottom:48px;}
 .mbim2-landing .metodologia-eyebrow{
   display:flex;align-items:center;gap:14px;font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;
   letter-spacing:0.1em;text-transform:uppercase;color:var(--blueprint);margin-bottom:18px;
 }
-.mbim2-landing .metodologia-eyebrow::before{content:"";width:26px;height:1px;background:var(--blueprint-line);}
+.mbim2-landing .metodologia-eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--blueprint);flex-shrink:0;}
+.mbim2-landing .section-accent .metodologia-eyebrow{color:rgba(255,255,255,0.85);}
+.mbim2-landing .section-accent .metodologia-eyebrow::before{background:var(--white);}
 .mbim2-landing .metodologia-head h2{
   font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:800;
   font-size:clamp(28px, 3.6vw, 43px);line-height:1.08;letter-spacing:-0.02em;max-width:680px;
 }
-.mbim2-landing .metodologia-grad{position:relative;display:inline-block;color:var(--blueprint);}
+.mbim2-landing .metodologia-grad{position:relative;display:inline-block;font-family:var(--font-accent);font-style:italic;font-weight:400;color:var(--blueprint-strong);letter-spacing:-0.01em;}
+.mbim2-landing .section-accent .metodologia-grad{color:var(--white);}
 .mbim2-landing .metodologia-grad-underline{position:absolute;left:0;right:0;bottom:-4px;height:2px;background:var(--blueprint-line);transform-origin:left center;transform:scaleX(1);pointer-events:none;}
+.mbim2-landing .section-accent .metodologia-grad-underline{background:rgba(255,255,255,0.5);}
 .mbim2-landing .metodologia-lede{margin-top:16px;max-width:620px;font-size:16.5px;line-height:1.68;color:var(--muted);}
 .mbim2-landing .metodologia-lede b{color:var(--ink);font-weight:600;}
 
+/* La "tarjeta del contrato" pasa de card azul sobre fondo blanco a card
+   BLANCA sobre la losa azul de la sección — mismo patrón que el
+   lp-form-card blanco de flowengine flotando sobre su losa oscura. */
 .mbim2-landing .contract-block{
   position:relative;overflow:hidden;border-radius:var(--radius-lg);
-  background:linear-gradient(150deg, var(--blueprint), var(--blueprint-strong));
-  color:var(--white);padding:44px 48px 40px;box-shadow:var(--shadow-brand);
-}
-.mbim2-landing .contract-block::after{
-  content:"";position:absolute;top:-140px;right:-120px;width:380px;height:380px;border-radius:50%;
-  background:radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);pointer-events:none;
+  background:var(--white);color:var(--color-gray-950, #0b0f19);
+  padding:44px 48px 40px;box-shadow:0 30px 60px -30px rgba(0,0,0,0.45);
 }
 .mbim2-landing .contract-block-inner{position:relative;z-index:1;}
 .mbim2-landing .contract-block-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;margin-bottom:38px;}
-.mbim2-landing .contract-tag{display:flex;align-items:center;gap:8px;font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.78);margin-bottom:14px;}
-.mbim2-landing .contract-tag-sq{width:7px;height:7px;border-radius:2px;background:var(--white);flex-shrink:0;}
-.mbim2-landing .contract-block-title{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:700;font-size:27px;line-height:1.2;max-width:480px;color:var(--white);}
+.mbim2-landing .contract-tag{display:flex;align-items:center;gap:8px;font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--blueprint-strong);margin-bottom:14px;}
+.mbim2-landing .contract-tag-sq{width:7px;height:7px;border-radius:2px;background:var(--blueprint);flex-shrink:0;}
+.mbim2-landing .contract-block-title{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:700;font-size:27px;line-height:1.2;max-width:480px;color:var(--color-gray-950, #0b0f19);}
 .mbim2-landing .contract-figure{text-align:right;flex-shrink:0;}
-.mbim2-landing .contract-figure-num{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:800;font-size:58px;line-height:1;color:var(--white);}
-.mbim2-landing .contract-figure-label{margin-top:6px;font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.68);}
-.mbim2-landing .contract-timeline{display:flex;height:8px;border-radius:4px;background:rgba(255,255,255,0.2);overflow:hidden;}
+.mbim2-landing .contract-figure-num{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:800;font-size:58px;line-height:1;color:var(--blueprint);}
+.mbim2-landing .contract-figure-label{margin-top:6px;font-family:var(--font-ibm-plex-mono), monospace;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5b6472;}
+.mbim2-landing .contract-timeline{display:flex;height:8px;border-radius:4px;background:#e7eaf0;overflow:hidden;}
 .mbim2-landing .contract-timeline-seg{transform-origin:left center;transform:scaleX(1);}
-.mbim2-landing .contract-timeline-seg--work{flex:10;background:rgba(255,255,255,0.9);}
+.mbim2-landing .contract-timeline-seg--work{flex:10;background:var(--blueprint);}
 .mbim2-landing .contract-timeline-seg--intern{flex:6;background:var(--amber);}
 .mbim2-landing .contract-timeline-labels{display:flex;justify-content:space-between;gap:24px;margin-top:20px;flex-wrap:wrap;}
 .mbim2-landing .contract-timeline-label{max-width:340px;}
-.mbim2-landing .contract-timeline-label .phase{display:block;font-family:var(--font-ibm-plex-mono), monospace;font-size:11px;letter-spacing:0.06em;margin-bottom:6px;color:rgba(255,255,255,0.72);}
-.mbim2-landing .contract-timeline-label p{font-size:14px;line-height:1.5;color:rgba(255,255,255,0.85);}
-.mbim2-landing .contract-timeline-label p b{color:var(--white);font-weight:600;}
+.mbim2-landing .contract-timeline-label .phase{display:block;font-family:var(--font-ibm-plex-mono), monospace;font-size:11px;letter-spacing:0.06em;margin-bottom:6px;color:#5b6472;}
+.mbim2-landing .contract-timeline-label p{font-size:14px;line-height:1.5;color:#3f4753;}
+.mbim2-landing .contract-timeline-label p b{color:var(--color-gray-950, #0b0f19);font-weight:600;}
 
 .mbim2-landing .day-rows{margin-top:48px;border-top:1px solid var(--line);}
 .mbim2-landing .day-row{display:grid;grid-template-columns:120px 1fr;gap:28px;padding:28px 0;border-bottom:1px solid var(--line);transition:padding-left .3s ease;}
 .mbim2-landing .day-row:hover{padding-left:10px;}
 .mbim2-landing .day-row-time{font-family:var(--font-ibm-plex-mono), monospace;font-size:13px;color:var(--blueprint);}
+.mbim2-landing .section-accent .day-row-time{color:rgba(255,255,255,0.9);}
 .mbim2-landing .day-row-body h3{font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;font-weight:700;font-size:21px;}
 .mbim2-landing .day-row-body p{margin-top:8px;max-width:600px;font-size:14.6px;line-height:1.6;color:var(--muted);}
 .mbim2-landing .day-row-body p b{color:var(--ink);font-weight:600;}
@@ -380,6 +494,8 @@ const LANDING_STYLES = `
   transition:color .2s var(--ease-out-quart, ease), border-color .2s var(--ease-out-quart, ease), gap .2s var(--ease-out-quart, ease);
 }
 .mbim2-landing .programa-cta-link:hover{color:var(--blueprint-strong);border-color:var(--blueprint-strong);gap:10px;}
+.mbim2-landing .section-accent .programa-cta-link{color:var(--white);border-color:rgba(255,255,255,0.5);}
+.mbim2-landing .section-accent .programa-cta-link:hover{color:var(--white);border-color:var(--white);gap:10px;}
 
 /* ---------- IA — editorial ---------- */
 .mbim2-landing .ai-section{position:relative;overflow:hidden;padding:96px 0;background:var(--bg-soft);color:var(--ink);border-bottom:1px solid var(--line);}
@@ -396,9 +512,9 @@ const LANDING_STYLES = `
 
 .mbim2-landing .ai-section .wrap{position:relative;z-index:1;}
 .mbim2-landing .ai-eyebrow{display:flex;align-items:center;gap:12px;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;color:var(--blueprint-strong);margin-bottom:20px;}
-.mbim2-landing .ai-eyebrow::before{content:"";width:30px;height:1px;background:var(--blueprint-line);}
+.mbim2-landing .ai-eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--blueprint);flex-shrink:0;}
 .mbim2-landing .ai-title{font-weight:700;font-size:clamp(32px,4vw,48px);line-height:1.1;letter-spacing:-0.02em;max-width:740px;color:var(--ink);}
-.mbim2-landing .ai-title em{font-style:normal;font-weight:600;color:var(--blueprint);}
+.mbim2-landing .ai-title em{font-family:var(--font-accent);font-style:italic;font-weight:400;color:var(--blueprint-strong);letter-spacing:-0.01em;}
 .mbim2-landing .ai-lede{margin-top:22px;max-width:620px;font-size:18px;line-height:1.7;color:var(--muted);}
 .mbim2-landing .ai-lede b{color:var(--ink);font-weight:600;}
 .mbim2-landing .ai-quote{margin-top:22px;margin-bottom:68px;max-width:560px;padding-left:18px;border-left:2px solid var(--blueprint-line);font-size:14px;font-style:italic;color:var(--dim);}
@@ -438,9 +554,9 @@ const LANDING_STYLES = `
 
 /* ---------- Programa ---------- */
 .mbim2-landing .programa-eyebrow{display:flex;align-items:center;gap:12px;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;color:var(--blueprint-strong);margin-bottom:20px;}
-.mbim2-landing .programa-eyebrow::before{content:"";width:30px;height:1px;background:var(--blueprint-line);}
+.mbim2-landing .programa-eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--blueprint);flex-shrink:0;}
 .mbim2-landing .programa-title{font-weight:700;font-size:clamp(30px,3.6vw,44px);line-height:1.12;letter-spacing:-0.022em;max-width:720px;color:var(--ink);}
-.mbim2-landing .programa-title-accent{color:var(--blueprint);}
+.mbim2-landing .programa-title-accent{font-family:var(--font-accent);font-style:italic;font-weight:400;color:var(--blueprint-strong);letter-spacing:-0.01em;}
 .mbim2-landing .programa-lede{margin-top:20px;margin-bottom:46px;max-width:600px;font-size:16.5px;line-height:1.68;color:var(--muted);}
 
 .mbim2-landing .programa-rail{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-bottom:16px;}
@@ -501,7 +617,7 @@ const LANDING_STYLES = `
 
 /* ---------- Secciones 6-11: base compartida ---------- */
 .mbim2-landing .editorial-eyebrow{display:flex;align-items:center;gap:12px;font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;color:var(--blueprint-strong);margin-bottom:18px;}
-.mbim2-landing .editorial-eyebrow::before{content:"";width:30px;height:1px;background:var(--blueprint-line);}
+.mbim2-landing .editorial-eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--blueprint);flex-shrink:0;}
 
 .mbim2-landing .glass-card{
   position:relative;overflow:hidden;border-radius:var(--radius-md);background:var(--white);border:1px solid var(--line);box-shadow:var(--shadow-soft-sm);
@@ -570,7 +686,7 @@ const LANDING_STYLES = `
 .mbim2-landing .testimonial-play-btn svg{margin-left:2px;}
 .mbim2-landing .testimonial-body{padding:22px 24px 26px;display:flex;flex-direction:column;flex:1;}
 .mbim2-landing .testimonial-n{font-family:var(--font-ibm-plex-mono), monospace;font-size:11.5px;color:var(--blueprint);letter-spacing:0.04em;margin-bottom:12px;}
-.mbim2-landing .testimonial .quote{font-family:var(--font-space-grotesk), sans-serif;font-weight:700;font-size:17px;line-height:1.35;color:var(--ink);flex:1;}
+.mbim2-landing .testimonial .quote{font-family:var(--font-accent);font-style:italic;font-weight:400;font-size:21px;line-height:1.3;letter-spacing:-0.01em;color:var(--ink);flex:1;}
 .mbim2-landing .testimonial .who{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
 .mbim2-landing .testimonial .who .name{font-family:var(--font-space-grotesk), sans-serif;font-weight:600;font-size:13.5px;}
 .mbim2-landing .testimonial .who .meta{font-family:var(--font-ibm-plex-mono), monospace;font-size:12.5px;color:var(--muted);margin-top:4px;letter-spacing:0.02em;}
@@ -583,29 +699,54 @@ const LANDING_STYLES = `
 }
 
 /* ---------- admisión ---------- */
-.mbim2-landing .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:48px;}
-.mbim2-landing .step{position:relative;padding:30px 26px;}
-.mbim2-landing .step .n{font-family:var(--font-ibm-plex-mono), monospace;color:var(--blueprint);font-size:13px;}
-.mbim2-landing .step h4{font-size:17px;margin-top:10px;margin-bottom:8px;}
-.mbim2-landing .step p{font-size:14px;color:var(--muted);}
-.mbim2-landing .step-accent{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blueprint);transform:scaleY(1);transform-origin:top center;pointer-events:none;}
+.mbim2-landing .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:48px;}
+.mbim2-landing .step{
+  position:relative;padding:24px 4px 0;background:none;border:none;box-shadow:none;
+  border-top:3px solid var(--blueprint);
+}
+.mbim2-landing .step .n{
+  font-family:var(--font-bricolage, var(--font-space-grotesk)), sans-serif;
+  color:var(--blueprint-soft);font-size:52px;font-weight:800;letter-spacing:-0.03em;line-height:1;margin-bottom:14px;
+  -webkit-text-stroke:1.5px var(--blueprint);
+}
+.mbim2-landing .step h4{font-size:19px;margin-top:0;margin-bottom:8px;}
+.mbim2-landing .step p{font-size:14.5px;color:var(--muted);}
+/* El acento lateral se dibujaba con GSAP (scaleY 0→1) — el paso ahora usa
+   un borde superior fijo como acento, así que el elemento se conserva
+   (lo sigue animando el hook de admisiónRef, sin efecto visible) pero deja
+   de pintar nada por su cuenta. */
+.mbim2-landing .step-accent{display:none;}
+/* .step combina la clase compartida .glass-card (tarjeta blanca con
+   elevación al hover) — aquí se anula por completo, incluido su :hover,
+   porque el paso ya no es una tarjeta, es solo texto sobre un borde
+   superior de acento. */
+.mbim2-landing .step:hover{transform:none;box-shadow:none;border-color:var(--blueprint);}
 @media(max-width:760px){.mbim2-landing .steps{grid-template-columns:1fr;}}
 
 .mbim2-landing .admision-alt-cta{margin-top:28px;padding-top:24px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;text-align:center;}
 .mbim2-landing .admision-alt-cta p{font-size:14.5px;color:var(--muted);}
 
 /* ---------- agenda ---------- */
-.mbim2-landing .agenda-form-wrap{max-width:640px;margin:0 auto;}
+/* El propio LeadCaptureForm es un componente compartido con /contact-page
+   (shadcn/ui, no se toca aquí) — este contenedor solo le da el mismo
+   tratamiento de "tarjeta" que el resto de losas de la página, para que no
+   se sienta como un formulario aparte pegado al final. */
+.mbim2-landing .agenda-form-wrap{
+  max-width:640px;margin:0 auto;padding:36px;border-radius:var(--radius-lg);
+  background:var(--white);border:1px solid var(--line);box-shadow:var(--shadow-soft);
+}
+@media(max-width:600px){.mbim2-landing .agenda-form-wrap{padding:24px;}}
 
 /* ---------- CTA final ---------- */
-.mbim2-landing .cta-final{padding:56px 0 100px;background:var(--bg);border-bottom:none;text-align:left;}
-.mbim2-landing .cta-final-card{position:relative;overflow:hidden;border-radius:var(--radius-lg);background:linear-gradient(135deg, var(--blueprint), var(--blueprint-strong));color:var(--white);padding:72px 64px;box-shadow:var(--shadow-brand);}
-.mbim2-landing .cta-final-card::after{content:"";position:absolute;top:-160px;right:-120px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);pointer-events:none;}
-.mbim2-landing .cta-final-card > *{position:relative;z-index:1;}
+/* El CTA final ya no es una tarjeta azul incrustada en una sección blanca
+   — la sección entera es ahora la losa de acento (.section-accent),
+   mismo criterio que Metodología: es el otro momento de "bandera" de la
+   página (junto con el destacado de arriba), reutilizando la misma losa
+   en vez de inventar un segundo tratamiento oscuro. */
+.mbim2-landing .cta-final{text-align:left;}
 .mbim2-landing .cta-final h2{color:var(--white);font-size:clamp(28px,3.6vw,40px);max-width:640px;}
 .mbim2-landing .cta-final p{color:rgba(255,255,255,0.82);margin-top:16px;max-width:520px;font-size:16.5px;}
 .mbim2-landing .cta-final .hero-actions{margin-top:36px;}
-@media(max-width:640px){.mbim2-landing .cta-final-card{padding:48px 28px;}}
 
 /* ---------- footer ---------- */
 .mbim2-landing footer{background:var(--ink);color:#8b93a1;padding:60px 0 36px;}
@@ -1268,12 +1409,45 @@ export function LandingClient({ fontVariables }: { fontVariables: string }) {
     }
   }, [heroRef, agendaRef, ctaRef])
 
+  // ---- Cabecera compacta al hacer scroll + barra de progreso de lectura
+  // arriba del todo — referencia tomada del landing de flowengine
+  // (cabecera que se "solidifica" y una franja de progreso fija). Un solo
+  // listener de scroll con throttle por requestAnimationFrame, no GSAP: es
+  // puramente cosmético (una clase + una custom property), no justifica
+  // cargar ScrollTrigger para esto.
+  const [headerScrolled, setHeaderScrolled] = useState(false)
+  const progressRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const max = document.documentElement.scrollHeight - window.innerHeight
+        const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
+        progressRef.current?.style.setProperty("--progress", String(progress))
+        setHeaderScrolled(window.scrollY > 12)
+      })
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    onScroll()
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [])
+
   return (
     <div className={`mbim2-landing ${fontVariables}`}>
       <style>{LANDING_STYLES}</style>
+      <div className="lp-bg" aria-hidden="true">
+        <span />
+        <span />
+      </div>
+      <div className="scroll-progress" ref={progressRef} aria-hidden="true" />
       <MetaPixel />
 
-      <nav className="nav">
+      <nav className={`nav${headerScrolled ? " is-scrolled" : ""}`}>
         <div className="nav-inner">
           <div className="nav-brand">
             <span className="school mono">IDESIE</span>
@@ -1536,7 +1710,7 @@ Solicita información · llamada opcional
       </section>
 
       {/* ============ METODOLOGÍA ============ */}
-      <section id="metodologia" ref={metodologiaRef}>
+      <section id="metodologia" className="section-accent" ref={metodologiaRef}>
         <div className="wrap">
           <div className="metodologia-head">
             <div className="metodologia-eyebrow">Metodología dual</div>
@@ -1997,33 +2171,31 @@ Solicita información · llamada opcional
       </section>
 
       {/* ============ CTA FINAL ============ */}
-      <section className="cta-final" ref={ctaRef}>
+      <section className="cta-final section-accent" ref={ctaRef}>
         <div className="wrap">
-          <div className="cta-final-card">
-            <h2>
-              <span className="cta-lede-muted">Empieza el </span>
-              <span className="cta-date">24 de octubre de 2026</span>
-              <span className="cta-lede-muted">.</span>
-            </h2>
-            <p>Grupo reducido, contrato desde el primer día y el módulo de IA más avanzado del mercado BIM en español.</p>
-            <div className="hero-actions">
-              <span className="cta-pulse-wrap">
-                <a href="#agenda" className="btn btn-signal" data-magnetic>
-                  Solicitar información
-                  <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
-                </a>
-              </span>
-              <button
-                type="button"
-                onClick={() => setCatalogOpen(true)}
-                className="btn btn-ghost-light btn-sweep"
-                data-magnetic
-                style={{ ["--btn-fill" as string]: "rgba(255,255,255,0.16)" }}
-              >
-                Descargar el programa (PDF)
+          <h2>
+            <span className="cta-lede-muted">Empieza el </span>
+            <span className="cta-date">24 de octubre de 2026</span>
+            <span className="cta-lede-muted">.</span>
+          </h2>
+          <p>Grupo reducido, contrato desde el primer día y el módulo de IA más avanzado del mercado BIM en español.</p>
+          <div className="hero-actions">
+            <span className="cta-pulse-wrap">
+              <a href="#agenda" className="btn btn-signal" data-magnetic>
+                Solicitar información
                 <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
-              </button>
-            </div>
+              </a>
+            </span>
+            <button
+              type="button"
+              onClick={() => setCatalogOpen(true)}
+              className="btn btn-ghost-light btn-sweep"
+              data-magnetic
+              style={{ ["--btn-fill" as string]: "rgba(255,255,255,0.16)" }}
+            >
+              Descargar el programa (PDF)
+              <ArrowRight className="btn-arrow-icon" size={15} aria-hidden="true" />
+            </button>
           </div>
         </div>
       </section>
